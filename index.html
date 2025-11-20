@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Explore tourist and local places in Petrer">
+    <title>Explore the City - Petrer</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/logo.png">
+    
+    <!-- Google Fonts - Roboto -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Estilos CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navbar Desktop -->
+    <nav class="navbar-desktop">
+        <div class="nav-desktop-container">
+            <div class="logo-desktop">
+                <img src="images/logo.png" alt="Explore The City Logo" class="logo-img">
+                <div class="logo-text">
+                    <h1 class="logo-title">Explore The City</h1>
+                    <p class="logo-subtitle">Petrer</p>
+                </div>
+            </div>
+            <ul class="nav-desktop-menu">
+                <li><a href="#home" class="nav-desktop-link active">Home</a></li>
+                <li><a href="#about" class="nav-desktop-link">About</a></li>
+                <li><a href="#contact" class="nav-desktop-link">Contact</a></li>
+            </ul>
+            <button class="signin-btn">Sign in</button>
+        </div>
+    </nav>
+
+    <!-- Navbar Mobile Compacto -->
+    <nav class="navbar-mobile">
+        <button class="hamburger" id="hamburger" aria-label="Menú de navegación">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </button>
+        <div class="logo">
+            <img src="images/logo.png" alt="Logo" class="logo-img-mobile">
+        </div>
+    </nav>
+
+    <!-- Menú Lateral Mobile -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>Menu</h2>
+            <button class="close-btn" id="closeBtn" aria-label="Close menu">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="#home" class="menu-link active"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="#favorites" class="menu-link"><i class="fas fa-heart"></i> Favorites</a></li>
+            <li><a href="#events" class="menu-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="#routes" class="menu-link"><i class="fas fa-route"></i> Routes</a></li>
+            <li><a href="#about" class="menu-link"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="#contact" class="menu-link"><i class="fas fa-phone"></i> Contact</a></li>
+        </ul>
+    </aside>
+
+    <!-- Overlay para cerrar menú -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Contenido Principal -->
+    <main class="main-content">
+        <!-- Header con Título y Búsqueda -->
+        <header class="mobile-header">
+            <div class="title-container">
+                <h1 class="main-title">Explore The City</h1>
+                <p class="main-subtitle">Petrer, Spain</p>
+            </div>
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search places">
+            </div>
+        </header>
+
+        <!-- Sección de Filtros Rápidos Mobile -->
+        <section class="quick-filters-mobile" id="quickFiltersMobile">
+            <button class="filter-chip active" data-category="all">
+                <i class="fas fa-globe"></i> All
+            </button>
+            <button class="filter-chip" data-category="historical">
+                <i class="fas fa-landmark"></i> Historical
+            </button>
+            <button class="filter-chip" data-category="restaurants">
+                <i class="fas fa-utensils"></i> Restaurants
+            </button>
+            <button class="filter-chip" data-category="nature">
+                <i class="fas fa-tree"></i> Nature
+            </button>
+            <button class="filter-chip" data-category="events">
+                <i class="fas fa-calendar"></i> Events
+            </button>
+        </section>
+
+        <!-- Layout Desktop: Dos Columnas -->
+        <div class="desktop-layout">
+            <!-- Columna Izquierda: Búsqueda + Mapa -->
+            <section class="left-column">
+                <!-- Búsqueda Desktop -->
+                <div class="search-container-desktop">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input-desktop" id="searchInputDesktop" placeholder="Search places">
+                </div>
+                
+                <!-- Mapa Interactivo -->
+                <div class="map-section" id="mapSection">
+                    <div id="map" class="map-container">
+                        <!-- Aquí se cargará Google Maps -->
+                    </div>
+                    
+                    <!-- Botón de Geolocalización -->
+                    <button class="location-btn" id="locationBtn" aria-label="My location">
+                        <i class="fas fa-location-arrow"></i>
+                    </button>
+                </div>
+
+                <!-- Tarjeta POI debajo del mapa (solo móvil) -->
+                <div class="poi-card-mobile" id="poiCardMobile">
+                    <div class="poi-header">
+                        <h2 class="poi-title">Historical Place</h2>
+                        <button class="favorite-btn" id="favoriteBtnMobile" aria-label="Add to favorites">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="poi-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="far fa-star"></i>
+                        <span class="rating-text">(4.0)</span>
+                    </div>
+                    
+                    <p class="poi-description">An interesting historical place</p>
+                    
+                    <div class="poi-details">
+                        <div class="detail-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>0.5 km away</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-clock"></i>
+                            <span>Open now</span>
+                        </div>
+                    </div>
+                    
+                    <button class="favorites-btn-main">
+                        Favorites
+                    </button>
+                    
+                    <div class="poi-actions">
+                        <button class="action-btn" id="directionsBtnMobile">
+                            <i class="fas fa-directions"></i> Directions
+                        </button>
+                        <button class="action-btn" id="moreInfoBtnMobile">
+                            <i class="fas fa-info-circle"></i> More info
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Columna Derecha: Filtros + Info POI (Desktop) -->
+            <aside class="right-column">
+                <!-- Panel de Filtros -->
+                <div class="filters-panel">
+                    <h2 class="filters-title">Filters</h2>
+                    
+                    <div class="filter-group">
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox" data-category="historical" checked>
+                            <span class="filter-color historical-color"></span>
+                            <span class="filter-label">Historical places</span>
+                        </label>
+                        
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox" data-category="nature">
+                            <span class="filter-color nature-color"></span>
+                            <span class="filter-label">Mountain routes</span>
+                        </label>
+                        
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox" data-category="restaurants">
+                            <span class="filter-color restaurants-color"></span>
+                            <span class="filter-label">Restaurants</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Tarjeta POI Desktop -->
+                <div class="poi-card-desktop" id="poiCardDesktop">
+                    <div class="poi-tag">Tex</div>
+                    
+                    <h2 class="poi-title-desktop">Historical Place</h2>
+                    
+                    <div class="poi-rating-desktop">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="far fa-star"></i>
+                    </div>
+                    
+                    <p class="poi-description-desktop">An interesting historical place</p>
+                    
+                    <button class="favorites-btn-desktop" id="favoritesBtnDesktop">
+                        Favorites
+                    </button>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Sección de Favoritos (oculta inicialmente) -->
+        <section class="favorites-section hidden" id="favoritesSection">
+            <h2 class="section-title">
+                <i class="fas fa-heart"></i> My Favorites
+            </h2>
+            <div id="favoritesList" class="favorites-list">
+                <!-- Los favoritos se cargarán dinámicamente -->
+                <p class="empty-message">You don't have any saved favorites yet.</p>
+            </div>
+        </section>
+
+        <!-- Sección de Eventos (oculta inicialmente) -->
+        <section class="events-section hidden" id="eventsSection">
+            <h2 class="section-title">
+                <i class="fas fa-calendar-alt"></i> Upcoming Events
+            </h2>
+            <div id="eventsList" class="events-list">
+                <!-- Los eventos se cargarán desde la API -->
+            </div>
+        </section>
+
+        <!-- Sección de Rutas (oculta inicialmente) -->
+        <section class="routes-section hidden" id="routesSection">
+            <h2 class="section-title">
+                <i class="fas fa-route"></i> Hiking Routes
+            </h2>
+            <div id="routesList" class="routes-list">
+                <!-- Las rutas se cargarán dinámicamente -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+</body>
+</html>

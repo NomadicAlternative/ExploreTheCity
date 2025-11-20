@@ -1,0 +1,1026 @@
+/* ====================================
+   Variables CSS - Paleta de Colores
+   ==================================== */
+:root {
+    --primary-color: #3D5A80;
+    --secondary-color: #98C1D9;
+    --accent-color-1: #EE6C4D;
+    --accent-color-2: #293241;
+    --text-color: #010101;
+    --white: #FFFFFF;
+    --light-gray: #F5F5F5;
+    --shadow: rgba(0, 0, 0, 0.1);
+    --shadow-dark: rgba(0, 0, 0, 0.2);
+    
+    /* Colores de filtros */
+    --historical-color: #EE6C4D;
+    --nature-color: #98C1D9;
+    --restaurants-color: #F4A261;
+}
+
+/* ====================================
+   Reset y Estilos Base
+   ==================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+    color: var(--text-color);
+    background-color: var(--light-gray);
+    line-height: 1.6;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+}
+
+h1, h2, h3 {
+    font-weight: 500;
+}
+
+button {
+    font-family: 'Roboto', sans-serif;
+    cursor: pointer;
+    border: none;
+    outline: none;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ====================================
+   Navbar Desktop (oculta en móvil)
+   ==================================== */
+.navbar-desktop {
+    display: none;
+}
+
+/* ====================================
+   Navbar Mobile Compacto
+   ==================================== */
+.navbar-mobile {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--primary-color);
+    padding: 0.8rem 1rem;
+    z-index: 1000;
+    box-shadow: 0 2px 8px var(--shadow);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hamburger {
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 5px;
+    transition: transform 0.3s ease;
+}
+
+.hamburger:active {
+    transform: scale(0.95);
+}
+
+.bar {
+    width: 25px;
+    height: 3px;
+    background-color: var(--white);
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+}
+
+.logo-img-mobile {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
+    max-width: 40px;
+}
+
+/* ====================================
+   Sidebar (Menú Lateral Mobile)
+   ==================================== */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px;
+    height: 100vh;
+    background-color: var(--white);
+    box-shadow: 2px 0 15px var(--shadow-dark);
+    z-index: 1100;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+}
+
+.sidebar.active {
+    left: 0;
+}
+
+.sidebar-header {
+    background-color: var(--primary-color);
+    color: var(--white);
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-header h2 {
+    font-size: 1.5rem;
+}
+
+.close-btn {
+    background: transparent;
+    color: var(--white);
+    font-size: 1.5rem;
+    padding: 0.5rem;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 1rem 0;
+}
+
+.sidebar-menu li {
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.menu-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.menu-link:hover,
+.menu-link.active {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.menu-link i {
+    font-size: 1.2rem;
+    width: 24px;
+}
+
+/* Overlay para cerrar menú */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    z-index: 999;
+    transition: all 0.3s ease;
+}
+
+.overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ====================================
+   Contenido Principal
+   ==================================== */
+.main-content {
+    margin-top: 60px;
+    padding-bottom: 2rem;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+/* ====================================
+   Header Mobile con Título y Búsqueda
+   ==================================== */
+.mobile-header {
+    background-color: var(--primary-color);
+    padding: 2rem 1rem 1.5rem 1rem;
+    border-radius: 0 0 30px 30px;
+    box-shadow: 0 4px 12px var(--shadow);
+    margin-bottom: 1rem;
+}
+
+.title-container {
+    margin-bottom: 1.5rem;
+}
+
+.main-title {
+    color: var(--white);
+    font-size: 2.5rem;
+    font-weight: 500;
+    line-height: 1.2;
+    margin: 0 0 0.5rem 0;
+}
+
+.main-subtitle {
+    color: var(--secondary-color);
+    font-size: 1rem;
+    font-weight: 300;
+    letter-spacing: 1.5px;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.9rem 1rem 0.9rem 3rem;
+    border: none;
+    border-radius: 15px;
+    font-size: 1rem;
+    background-color: var(--white);
+    box-shadow: 0 2px 8px var(--shadow);
+}
+
+.search-input::placeholder {
+    color: #999;
+}
+
+.search-input:focus {
+    outline: 2px solid var(--secondary-color);
+}
+
+/* ====================================
+   Filtros Rápidos Mobile
+   ==================================== */
+.quick-filters-mobile {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0 1rem 1rem 1rem;
+    width: 100%;
+    max-width: 100%;
+    background-color: var(--light-gray);
+    position: relative;
+    z-index: 100;
+}
+
+.quick-filters-mobile::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.65rem 0.9rem;
+    background-color: var(--white);
+    border: 2px solid var(--secondary-color);
+    border-radius: 20px;
+    color: var(--primary-color);
+    font-size: 0.85rem;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    min-height: 44px;
+}
+
+.filter-chip:hover,
+.filter-chip.active {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.filter-chip i {
+    font-size: 0.9rem;
+}
+
+/* ====================================
+   Layout Desktop - Oculto en móvil
+   ==================================== */
+.desktop-layout {
+    display: block;
+}
+
+.left-column {
+    width: 100%;
+}
+
+.right-column {
+    display: none;
+}
+
+/* Búsqueda Desktop - Oculta en móvil */
+.search-container-desktop {
+    display: none;
+}
+
+/* ====================================
+   Mapa Interactivo
+   ==================================== */
+.map-section {
+    
+    position: relative;
+    margin: 1rem;
+    height: 250px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px var(--shadow);
+}
+
+.map-container {
+    width: 100%;
+    height: 100%;
+    background-color: #e0e0e0;
+    background-image: 
+        repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.05) 10px, rgba(255,255,255,.05) 20px),
+        linear-gradient(to bottom, #d4d4d4, #f0f0f0);
+}
+
+/* Botón de Geolocalización */
+.location-btn {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    width: 50px;
+    height: 50px;
+    background-color: var(--white);
+    border-radius: 50%;
+    box-shadow: 0 3px 10px var(--shadow-dark);
+    color: var(--primary-color);
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.location-btn:hover {
+    background-color: var(--secondary-color);
+    transform: scale(1.05);
+}
+
+.location-btn:active {
+    transform: scale(0.95);
+}
+
+/* ====================================
+   Tarjeta de POI Mobile
+   ==================================== */
+.poi-card-mobile {
+    background-color: var(--white);
+    margin: 1rem;
+    padding: 1.2rem;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px var(--shadow);
+}
+
+.poi-card-desktop {
+    display: none;
+}
+
+.poi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.8rem;
+}
+
+.poi-title {
+    font-size: 1.5rem;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.favorite-btn {
+    background: transparent;
+    color: var(--accent-color-1);
+    font-size: 1.5rem;
+    padding: 0.3rem;
+    transition: transform 0.3s ease;
+}
+
+.favorite-btn:active {
+    transform: scale(1.2);
+}
+
+.favorite-btn .fa-heart.fas {
+    color: var(--accent-color-1);
+}
+
+.poi-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 0.8rem;
+}
+
+.poi-rating i {
+    color: #FFD700;
+    font-size: 1.1rem;
+}
+
+.rating-text {
+    margin-left: 0.5rem;
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.poi-description {
+    color: #666;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.poi-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.2rem;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    color: var(--text-color);
+    font-size: 0.95rem;
+}
+
+.detail-item i {
+    color: var(--primary-color);
+    width: 20px;
+}
+
+.favorites-btn-main {
+    width: 100%;
+    padding: 1rem;
+    background-color: var(--accent-color-1);
+    color: var(--white);
+    font-size: 1.1rem;
+    font-weight: 500;
+    border-radius: 15px;
+    margin-bottom: 1rem;
+    box-shadow: 0 3px 8px rgba(238, 108, 77, 0.3);
+    transition: all 0.3s ease;
+}
+
+.favorites-btn-main:hover {
+    background-color: #d85a3a;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(238, 108, 77, 0.4);
+}
+
+.favorites-btn-main:active {
+    transform: translateY(0);
+}
+
+.poi-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.8rem;
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.action-btn i {
+    font-size: 1rem;
+}
+
+/* ====================================
+   Secciones de Contenido
+   ==================================== */
+.favorites-section,
+.events-section,
+.routes-section {
+    padding: 1rem;
+    width: 100%;
+    max-width: 100%;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 1.8rem;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+
+.favorites-list,
+.events-list,
+.routes-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.empty-message {
+    text-align: center;
+    color: #999;
+    padding: 2rem;
+    font-size: 1rem;
+}
+
+.favorite-card,
+.event-card,
+.route-card {
+    background-color: var(--white);
+    padding: 1.2rem;
+    border-radius: 15px;
+    box-shadow: 0 3px 10px var(--shadow);
+    transition: transform 0.3s ease;
+}
+
+.favorite-card:hover,
+.event-card:hover,
+.route-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px var(--shadow-dark);
+}
+
+/* ====================================
+   Responsive - Tablet (768px+)
+   ==================================== */
+@media (min-width: 768px) {
+    .navbar-mobile {
+        padding: 1rem 2rem;
+    }
+
+    .logo-img-mobile {
+        height: 50px;
+        max-width: 50px;
+    }
+
+    .mobile-header {
+        padding: 2.5rem 2rem 2rem 2rem;
+    }
+
+    .main-title {
+        font-size: 3rem;
+    }
+
+    .main-subtitle {
+        font-size: 1.1rem;
+    }
+
+    .map-section {
+        height: 400px;
+        margin: 1.5rem 2rem;
+    }
+
+    .poi-card-mobile {
+        margin: 1.5rem 2rem;
+    }
+
+    .quick-filters-mobile {
+        padding: 0 2rem 1rem 2rem;
+    }
+
+    .favorites-list,
+    .events-list,
+    .routes-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ====================================
+   Responsive - Desktop (1024px+)
+   ==================================== */
+@media (min-width: 1024px) {
+    /* Ocultar elementos móviles */
+    .navbar-mobile {
+        display: none;
+    }
+
+    .mobile-header {
+        display: none;
+    }
+
+    .sidebar {
+        display: none;
+    }
+
+    .overlay {
+        display: none;
+    }
+
+    .quick-filters-mobile {
+        display: none;
+    }
+
+    .poi-card-mobile {
+        display: none;
+    }
+
+    /* Mostrar navbar desktop */
+    .navbar-desktop {
+        display: block;
+        background-color: var(--primary-color);
+        padding: 1.5rem 3rem;
+        box-shadow: 0 2px 10px var(--shadow);
+    }
+
+    .nav-desktop-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .logo-desktop {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .logo-img {
+        height: 192px;
+        width: auto;
+        object-fit: contain;
+    }
+
+    .logo-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+
+    .logo-title {
+        color: var(--white);
+        font-size: 1.8rem;
+        font-weight: 500;
+        line-height: 1.2;
+        margin: 0;
+    }
+
+    .logo-subtitle {
+        color: var(--secondary-color);
+        font-size: 1.1rem;
+        font-weight: 300;
+        letter-spacing: 2px;
+        margin: 0;
+        text-transform: uppercase;
+    }
+
+    .nav-desktop-menu {
+        display: flex;
+        list-style: none;
+        gap: 2.5rem;
+        margin-left: auto;
+        margin-right: 2rem;
+    }
+
+    .nav-desktop-link {
+        color: var(--white);
+        font-size: 1.1rem;
+        font-weight: 400;
+        transition: color 0.3s ease;
+        position: relative;
+    }
+
+    .nav-desktop-link:hover,
+    .nav-desktop-link.active {
+        color: var(--secondary-color);
+    }
+
+    .nav-desktop-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background-color: var(--secondary-color);
+    }
+
+    .signin-btn {
+        background-color: var(--accent-color-1);
+        color: var(--white);
+        padding: 0.7rem 2rem;
+        border-radius: 25px;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .signin-btn:hover {
+        background-color: #d85a3a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(238, 108, 77, 0.4);
+    }
+
+    /* Layout Desktop de 2 columnas */
+    .main-content {
+        margin-top: 0;
+        padding-bottom: 0;
+    }
+
+    .desktop-layout {
+        display: grid;
+        grid-template-columns: 1fr 450px;
+        height: calc(100vh - 90px);
+        gap: 0;
+        background-color: var(--primary-color);
+    }
+
+    .left-column {
+        background-color: var(--primary-color);
+        padding: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Búsqueda Desktop */
+    .search-container-desktop {
+        display: flex;
+        position: relative;
+        align-items: center;
+        margin: 2rem 2rem 1.5rem 2rem;
+    }
+
+    .search-input-desktop {
+        width: 100%;
+        padding: 1rem 1rem 1rem 3rem;
+        border: none;
+        border-radius: 15px;
+        font-size: 1.05rem;
+        background-color: var(--white);
+        box-shadow: 0 3px 10px var(--shadow);
+    }
+
+    .search-input-desktop::placeholder {
+        color: #999;
+    }
+
+    .search-input-desktop:focus {
+        outline: 2px solid var(--secondary-color);
+    }
+
+    /* Mapa Desktop */
+    .map-section {
+        height: calc(100vh - 180px);
+        margin: 0 2rem 2rem 2rem;
+        border-radius: 20px;
+        width: auto;
+        max-width: calc(100% - 4rem);
+    }
+
+    /* Columna Derecha Desktop */
+    .right-column {
+        display: block;
+        background-color: var(--light-gray);
+        padding: 2rem;
+        overflow-y: auto;
+        border-radius: 20px;
+        margin: 2rem 2rem 2rem 0;
+    }
+
+    /* Panel de Filtros Desktop */
+    .filters-panel {
+        background-color: var(--white);
+        padding: 1.8rem;
+        border-radius: 20px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 3px 10px var(--shadow);
+    }
+
+    .filters-title {
+        font-size: 1.8rem;
+        color: var(--text-color);
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+    }
+
+    .filter-option {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+
+    .filter-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: var(--primary-color);
+    }
+
+    .filter-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 5px;
+        flex-shrink: 0;
+    }
+
+    .historical-color {
+        background-color: var(--historical-color);
+    }
+
+    .nature-color {
+        background-color: var(--nature-color);
+    }
+
+    .restaurants-color {
+        background-color: var(--restaurants-color);
+    }
+
+    .filter-label {
+        color: var(--text-color);
+        font-size: 1.05rem;
+    }
+
+    /* Tarjeta POI Desktop */
+    .poi-card-desktop {
+        display: block;
+        background-color: var(--white);
+        padding: 1.8rem;
+        border-radius: 20px;
+        box-shadow: 0 3px 10px var(--shadow);
+    }
+
+    .poi-tag {
+        display: inline-block;
+        background-color: var(--light-gray);
+        padding: 0.4rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        color: var(--text-color);
+    }
+
+    .poi-tag::after {
+        content: ' ····';
+        color: var(--accent-color-1);
+        font-weight: bold;
+    }
+
+    .poi-title-desktop {
+        font-size: 1.8rem;
+        color: var(--text-color);
+        margin-bottom: 0.8rem;
+        font-weight: 500;
+    }
+
+    .poi-rating-desktop {
+        display: flex;
+        gap: 0.3rem;
+        margin-bottom: 1rem;
+    }
+
+    .poi-rating-desktop i {
+        color: #FFD700;
+        font-size: 1.2rem;
+    }
+
+    .poi-description-desktop {
+        color: #666;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
+    }
+
+    .favorites-btn-desktop {
+        width: 100%;
+        padding: 1rem;
+        background-color: var(--accent-color-1);
+        color: var(--white);
+        font-size: 1.1rem;
+        font-weight: 500;
+        border-radius: 15px;
+        box-shadow: 0 3px 8px rgba(238, 108, 77, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .favorites-btn-desktop:hover {
+        background-color: #d85a3a;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 12px rgba(238, 108, 77, 0.4);
+    }
+
+    /* Secciones de contenido en desktop */
+    .favorites-list,
+    .events-list,
+    .routes-list {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ====================================
+   Animaciones
+   ==================================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.poi-card-mobile,
+.poi-card-desktop,
+.favorite-card,
+.event-card,
+.route-card {
+    animation: fadeIn 0.4s ease;
+}
+
+/* ====================================
+   Accesibilidad
+   ==================================== */
+button:focus-visible {
+    outline: 3px solid var(--accent-color-1);
+    outline-offset: 2px;
+}
+
+a:focus-visible {
+    outline: 3px solid var(--accent-color-1);
+    outline-offset: 2px;
+}
+
+/* ====================================
+   Scrollbar Personalizado
+   ==================================== */
+.left-column::-webkit-scrollbar,
+.right-column::-webkit-scrollbar {
+    width: 8px;
+}
+
+.left-column::-webkit-scrollbar-track,
+.right-column::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.left-column::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+.right-column::-webkit-scrollbar-thumb {
+    background: var(--secondary-color);
+    border-radius: 10px;
+}
+
+.left-column::-webkit-scrollbar-thumb:hover,
+.right-column::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
