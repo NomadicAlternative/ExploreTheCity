@@ -7,7 +7,7 @@
     <title>Explore the City - Petrer</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="images/logo.png">
+    <link rel="icon" type="image/webp" href="images/logo.webp">
     
     <!-- Google Fonts - Roboto -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,7 +25,7 @@
     <nav class="navbar-desktop">
         <div class="nav-desktop-container">
             <div class="logo-desktop">
-                <img src="images/logo.png" alt="Explore The City Logo" class="logo-img">
+                <img src="images/logo.webp" alt="Explore The City Logo" class="logo-img">
                 <div class="logo-text">
                     <h1 class="logo-title">Explore The City</h1>
                     <p class="logo-subtitle">Petrer</p>
@@ -40,15 +40,22 @@
         </div>
     </nav>
 
-    <!-- Navbar Mobile Compacto -->
+    <!-- Navbar Mobile Unificado -->
     <nav class="navbar-mobile">
-        <button class="hamburger" id="hamburger" aria-label="Menú de navegación">
-            <span class="bar"></span>
-            <span class="bar"></span>
-            <span class="bar"></span>
-        </button>
-        <div class="logo">
-            <img src="images/logo.png" alt="Logo" class="logo-img-mobile">
+        <div class="nav-top-row">
+            <div class="logo-location">
+                <img src="images/logo.webp" alt="Explore The City Logo" class="logo-img-mobile">
+                <span class="location-text">Petrer, Spain</span>
+            </div>
+            <button class="hamburger" id="hamburger" aria-label="Menú de navegación">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+        </div>
+        <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" id="searchInput" placeholder="Search places">
         </div>
     </nav>
 
@@ -75,17 +82,6 @@
 
     <!-- Contenido Principal -->
     <main class="main-content">
-        <!-- Header con Título y Búsqueda -->
-        <header class="mobile-header">
-            <div class="title-container">
-                <h1 class="main-title">Explore The City</h1>
-                <p class="main-subtitle">Petrer, Spain</p>
-            </div>
-            <div class="search-container">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" class="search-input" id="searchInput" placeholder="Search places">
-            </div>
-        </header>
 
         <!-- Sección de Filtros Rápidos Mobile -->
         <section class="quick-filters-mobile" id="quickFiltersMobile">
