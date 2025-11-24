@@ -249,7 +249,33 @@
         </section>
     </main>
 
+    <!-- Google Maps API -->
+    <script src="js/config.js"></script>
+    <script>
+        // Función global para Google Maps callback
+        window.initMap = function() {
+            console.log('📍 Google Maps API loaded');
+            // El MapaModule se encargará de la inicialización real
+            if (window.MapaModule && window.MapaModule.initMap) {
+                window.MapaModule.initMap();
+            }
+        };
+        
+        // Cargar Google Maps con la API Key del config
+        (function() {
+            const config = window.GOOGLE_MAPS_CONFIG || {};
+            const apiKey = config.apiKey || 'YOUR_API_KEY';
+            const libraries = (config.libraries || ['places']).join(',');
+            
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async&callback=initMap&libraries=${libraries}&v=weekly`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        })();
+    </script>
+    
     <!-- Scripts -->
-    <script src="js/main.js"></script>
+    <script src="js/main.js" type="module"></script>
 </body>
 </html>
