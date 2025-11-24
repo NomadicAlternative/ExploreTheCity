@@ -270,9 +270,9 @@ a {
    ==================================== */
 .quick-filters-mobile {
     margin-top: 60px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.1rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
     padding: 0 1rem 1rem 1rem;
     width: 100%;
     max-width: 100%;
@@ -288,16 +288,16 @@ a {
 .filter-chip {
     display: flex;
     align-items: center;
-    gap: 0.2rem;
-    padding: 0.30rem 0.7rem;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.7rem;
     background-color: var(--white);
     border: 2px solid var(--secondary-color);
     border-radius: 20px;
     color: var(--primary-color);
     font-size: 0.85rem;
     white-space: nowrap;
-    transition: all 0.5s ease;
-    flex-shrink: 0;
+    transition: all 0.3s ease;
     min-height: 44px;
 }
 
@@ -613,6 +613,15 @@ a {
 }
 
 /* ====================================
+   Responsive - Mobile Medium (480px+)
+   ==================================== */
+@media (min-width: 480px) {
+    .quick-filters-mobile {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ====================================
    Responsive - Tablet (768px+)
    ==================================== */
 @media (min-width: 768px) {
@@ -654,6 +663,7 @@ a {
 
     .quick-filters-mobile {
         padding: 0 2rem 1rem 2rem;
+        grid-template-columns: repeat(5, 1fr);
     }
 
     .favorites-list,
