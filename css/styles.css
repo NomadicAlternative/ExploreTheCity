@@ -622,61 +622,245 @@ a {
 }
 
 /* ====================================
-   Responsive - Tablet (768px+)
+   Responsive - Tablet Portrait (768px - 1023px)
+   iPad Mini, iPad Air, iPad Pro 11" en portrait
    ==================================== */
-@media (min-width: 768px) {
+@media (min-width: 768px) and (max-width: 1023px) {
     .navbar-mobile {
-        padding: 1rem 2rem 1.2rem 2rem;
+        padding: 1.2rem 2.5rem 1.5rem 2.5rem;
+        border-radius: 0 0 25px 25px;
     }
 
     .nav-top-row {
-        margin-bottom: 1rem;
+        margin-bottom: 1.2rem;
     }
 
     .logo-img-mobile {
-        height: 55px;
+        height: 60px;
     }
 
     .location-text {
-        font-size: 0.85rem;
-        letter-spacing: 2px;
+        font-size: 0.9rem;
+        letter-spacing: 2.5px;
     }
 
     .search-input {
-        padding: 0.8rem 1rem 0.8rem 2.8rem;
-        font-size: 1rem;
+        padding: 1rem 1.2rem 1rem 3.2rem;
+        font-size: 1.05rem;
+        border-radius: 15px;
     }
 
     .search-icon {
-        left: 1rem;
+        left: 1.2rem;
+        font-size: 1.1rem;
+    }
+
+    .main-content {
+        margin-top: 140px;
+    }
+
+    .quick-filters-mobile {
+        padding: 0 2.5rem 1.5rem 2.5rem;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.8rem;
+        margin-top: 70px;
+    }
+
+    .filter-chip {
+        padding: 0.7rem 1rem;
+        font-size: 0.95rem;
+        min-height: 52px;
+    }
+
+    .filter-chip i {
         font-size: 1rem;
     }
 
     .map-section {
-        height: 400px;
-        margin: 1.5rem 2rem;
+        height: 500px;
+        margin: 2rem 2.5rem;
+        border-radius: 25px;
+    }
+
+    .location-btn {
+        width: 60px;
+        height: 60px;
+        font-size: 1.4rem;
+        bottom: 1.5rem;
+        right: 1.5rem;
     }
 
     .poi-card-mobile {
-        margin: 1.5rem 2rem;
+        margin: 2rem 2.5rem;
+        padding: 1.8rem;
+        border-radius: 25px;
     }
 
-    .quick-filters-mobile {
-        padding: 0 2rem 1rem 2rem;
-        grid-template-columns: repeat(5, 1fr);
+    .poi-title {
+        font-size: 1.6rem;
+        margin-bottom: 1rem;
+    }
+
+    .poi-rating {
+        margin-bottom: 1rem;
+    }
+
+    .poi-rating i {
+        font-size: 1.3rem;
+    }
+
+    .rating-text {
+        font-size: 1.05rem;
+    }
+
+    .poi-description {
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .poi-details {
+        gap: 0.8rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .detail-item {
+        font-size: 1rem;
+    }
+
+    .detail-item i {
+        font-size: 1.1rem;
+        width: 24px;
+    }
+
+    .favorites-btn-main {
+        padding: 1.2rem;
+        font-size: 1.2rem;
+        border-radius: 18px;
+        margin-bottom: 1.5rem;
+    }
+
+    .poi-actions {
+        gap: 1rem;
+    }
+
+    .action-btn {
+        padding: 1rem 0.8rem;
+        font-size: 1rem;
+        border-radius: 12px;
+        min-height: 52px;
+    }
+
+    .action-btn i {
+        font-size: 1.1rem;
+    }
+
+    .favorite-btn {
+        font-size: 1.8rem;
+    }
+
+    .favorites-section,
+    .events-section,
+    .routes-section {
+        padding: 2rem 2.5rem;
+    }
+
+    .section-title {
+        font-size: 2.2rem;
+        margin-bottom: 2rem;
     }
 
     .favorites-list,
     .events-list,
     .routes-list {
         grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .favorite-card,
+    .event-card,
+    .route-card {
+        padding: 1.5rem;
+        border-radius: 18px;
     }
 }
 
 /* ====================================
-   Responsive - Desktop (1024px+)
+   Responsive - Tablet Landscape (1024px - 1365px)
+   iPad Air, iPad Pro 11" en landscape
    ==================================== */
-@media (min-width: 1024px) {
+@media (min-width: 1024px) and (max-width: 1365px) {
+    body {
+        width: 100vw;
+        max-width: 100vw;
+        min-width: 100vw;
+    }
+
+    .navbar-desktop {
+        padding: 1rem 2rem;
+    }
+
+    .nav-desktop-container {
+        padding: 0 1rem;
+    }
+
+    .logo-img {
+        height: 70px;
+    }
+
+    .logo-title {
+        font-size: 1.2rem;
+    }
+
+    .logo-subtitle {
+        font-size: 0.75rem;
+    }
+
+    .nav-desktop-menu {
+        gap: 1.5rem;
+        margin-right: 1rem;
+    }
+
+    .nav-desktop-link {
+        font-size: 1rem;
+    }
+
+    .signin-btn {
+        padding: 0.6rem 1.5rem;
+        font-size: 0.9rem;
+    }
+
+    .desktop-layout {
+        grid-template-columns: 1fr 380px;
+        height: calc(100vh - 102px);
+    }
+
+    .right-column {
+        padding: 1.2rem;
+        margin: 1.5rem 0 1.5rem 0;
+    }
+
+    .filters-panel {
+        padding: 1rem;
+    }
+
+    .poi-card-desktop {
+        padding: 1rem;
+    }
+
+    .search-container-desktop {
+        margin: 1.5rem;
+    }
+
+    .map-section {
+        margin: 0 1.5rem 1.5rem 1.5rem;
+    }
+}
+
+/* ====================================
+   Responsive - Desktop Large (1366px+)
+   Pantallas grandes, laptops, desktops
+   ==================================== */
+@media (min-width: 1366px) {
     /* Body con ancho del 70% usando viewport width */
     body {
         width: 70vw;
