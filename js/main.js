@@ -294,7 +294,20 @@ const App = (() => {
                 if (error.code === 1) {
                     errorMessage = 'Location permission denied';
                 } else if (error.code === 2) {
-                    errorMessage = 'Location unavailable';
+                    // Error code 2: Position unavailable
+                    errorMessage = 'Using default location (Petrer)';
+                    console.log('⚠️ Location unavailable, using default location');
+                    
+                    // Usar ubicación por defecto (Petrer, España)
+                    const config = window.GOOGLE_MAPS_CONFIG || {};
+                    const defaultLat = config.defaultCenter?.lat || 38.4836;
+                    const defaultLng = config.defaultCenter?.lng || -0.7768;
+                    
+                    MapaModule.centerMap(defaultLat, defaultLng, 14);
+                    
+                    UIController.setLocationButtonLoading(false);
+                    UIController.showNotification(errorMessage, 'warning');
+                    return;
                 } else if (error.code === 3) {
                     errorMessage = 'Location request timeout';
                 }

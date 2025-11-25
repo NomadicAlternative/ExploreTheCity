@@ -397,7 +397,8 @@ export const UIController = (() => {
         const colors = {
             success: '#3D5A80',
             error: '#EE6C4D',
-            info: '#98C1D9'
+            info: '#98C1D9',
+            warning: '#F4A261'
         };
 
         const notification = document.createElement('div');
