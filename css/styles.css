@@ -138,9 +138,26 @@
         height: 300px;
     }
     
+    /* Simplificar animaciones en móviles para mejor rendimiento */
     .splash-logo {
         width: 300px;
         height: 300px;
+        /* Remover el spin en móviles - solo entrada y pulso suave */
+        animation: 
+            logoEntrance 1s ease-out forwards,
+            logoPulse 1s ease-in-out 2s 2;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    }
+    
+    /* Desactivar anillo rotatorio en móviles */
+    .logo-ring {
+        animation: none;
+        opacity: 0.3;
+    }
+    
+    /* Desactivar círculos de fondo en móviles */
+    .splash-bg-circle {
+        display: none;
     }
     
     .circle-1 {
