@@ -254,11 +254,24 @@
     <script>
         // Función global para Google Maps callback
         window.initMap = function() {
-            console.log('📍 Google Maps API loaded');
-            // El MapaModule se encargará de la inicialización real
-            if (window.MapaModule && window.MapaModule.initMap) {
-                window.MapaModule.initMap();
-            }
+            console.log('📍 Google Maps API loaded - waiting for App...');
+            
+            // Esperar a que App esté disponible
+            const checkApp = setInterval(() => {
+                if (window.App && typeof window.App.initializeMap === 'function') {
+                    clearInterval(checkApp);
+                    console.log('✅ Initializing map through App...');
+                    window.App.initializeMap();
+                }
+            }, 50); // Verificar cada 50ms
+            
+            // Timeout de seguridad (10 segundos)
+            setTimeout(() => {
+                clearInterval(checkApp);
+                if (!window.App) {
+                    console.error('❌ App not loaded after 10 seconds');
+                }
+            }, 10000);
         };
         
         // Cargar Google Maps con la API Key del config
@@ -271,6 +284,9 @@
             script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async&callback=initMap&libraries=${libraries}&v=weekly`;
             script.async = true;
             script.defer = true;
+            script.onerror = function() {
+                console.error('❌ Failed to load Google Maps API');
+            };
             document.head.appendChild(script);
         })();
     </script>

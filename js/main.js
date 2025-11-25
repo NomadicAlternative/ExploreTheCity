@@ -461,12 +461,23 @@ const App = (() => {
      */
     function initializeMap() {
         try {
+            // Verificar si el mapa ya está inicializado
+            if (MapaModule.getMap()) {
+                console.log('⚠️ Map already initialized, skipping...');
+                return;
+            }
+
+            console.log('🗺️ Initializing Google Maps...');
             const config = window.GOOGLE_MAPS_CONFIG || {};
             
-            MapaModule.initMap('map', {
+            const mapInstance = MapaModule.initMap('map', {
                 center: config.defaultCenter || { lat: 38.4836, lng: -0.7768 },
                 zoom: config.defaultZoom || 14
             });
+
+            if (!mapInstance) {
+                throw new Error('Failed to initialize map');
+            }
 
             // Cargar POIs iniciales
             const pois = POIDataModule.getAllPOIs();
@@ -479,10 +490,10 @@ const App = (() => {
                 updateFavoriteUI();
             }
 
-            console.log('✅ Google Maps initialized');
+            console.log('✅ Google Maps initialized successfully');
         } catch (error) {
             console.error('❌ Error initializing map:', error);
-            UIController.showNotification('Error loading map', 'error');
+            UIController.showNotification('Error loading map. Please refresh the page.', 'error');
         }
     }
 
@@ -618,16 +629,6 @@ const App = (() => {
         alert('Contact\n\nEmail: info@explorethecity.com\nPhone: +34 123 456 789\n\nDo you have suggestions? We\'d love to hear from you!');
     }
 
-    /**
-     * Callback cuando Google Maps se carga
-     */
-    window.initMap = function() {
-        console.log('Google Maps API loaded');
-        if (isInitialized) {
-            initializeMap();
-        }
-    };
-
     // API pública
     return {
         init,
@@ -643,15 +644,6 @@ window.App = App;
 // Inicialización cuando el DOM esté listo
 // ====================================
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('� DOM loaded, initializing App...');
     App.init();
 });
-
-// ====================================
-// Inicialización de Google Maps (callback global)
-// ====================================
-window.initMap = function() {
-    console.log('📍 Google Maps API loaded');
-    if (window.App) {
-        App.initializeMap();
-    }
-};
