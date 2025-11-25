@@ -55,7 +55,7 @@ const App = (() => {
             isInitialized = true;
             console.log('✅ Explore the City initialized successfully');
 
-            // Ocultar splash screen después de 3 segundos
+            // Ocultar splash screen después de 4 segundos (animaciones elaboradas)
             setTimeout(() => {
                 const splashScreen = document.getElementById('splashScreen');
                 if (splashScreen) {
@@ -64,7 +64,7 @@ const App = (() => {
                         splashScreen.remove();
                     }, 500);
                 }
-            }, 3000);
+            }, 4000);
 
         } catch (error) {
             console.error('❌ Error initializing app:', error);
