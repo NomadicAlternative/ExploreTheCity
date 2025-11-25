@@ -1,5 +1,5 @@
 # API Keys y configuración sensible
-js/config.js
+# js/config.js  # Comentado para permitir subir la configuración al repositorio
 
 # Dependencias
 node_modules/
