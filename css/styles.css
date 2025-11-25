@@ -513,16 +513,20 @@ a {
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
-    padding: 0.7rem 0.5rem;
+    padding: 0.7rem 0.6rem;
     background-color: var(--secondary-color);
     color: var(--primary-color);
     border-radius: 10px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 500;
     transition: all 0.3s ease;
     flex: 1 1 calc(50% - 0.3rem);
-    min-width: 120px;
-    white-space: nowrap;
+    min-width: 110px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .action-btn:hover {
@@ -531,7 +535,7 @@ a {
 }
 
 .action-btn i {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     flex-shrink: 0;
 }
 
@@ -600,13 +604,15 @@ a {
     }
 
     .action-btn {
-        font-size: 0.75rem;
-        padding: 0.6rem 0.4rem;
-        gap: 0.3rem;
+        font-size: 0.7rem;
+        padding: 0.6rem 0.3rem;
+        gap: 0.25rem;
+        min-width: 100px;
+        line-height: 1.2;
     }
 
     .action-btn i {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
 
     .favorites-btn-main {
@@ -749,14 +755,16 @@ a {
     }
 
     .action-btn {
-        padding: 1rem 0.8rem;
-        font-size: 1rem;
+        padding: 1rem 0.7rem;
+        font-size: 0.95rem;
         border-radius: 12px;
         min-height: 52px;
+        min-width: 140px;
+        line-height: 1.4;
     }
 
     .action-btn i {
-        font-size: 1.1rem;
+        font-size: 1rem;
     }
 
     .favorite-btn {
