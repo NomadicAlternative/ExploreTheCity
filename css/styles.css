@@ -270,8 +270,8 @@ a {
    ==================================== */
 .quick-filters-mobile {
     margin-top: 60px;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     padding: 0 1rem 1rem 1rem;
     width: 100%;
@@ -279,6 +279,7 @@ a {
     background-color: var(--light-gray);
     position: relative;
     z-index: 100;
+    justify-content: space-between;
 }
 
 .quick-filters-mobile::-webkit-scrollbar {
@@ -299,6 +300,8 @@ a {
     white-space: nowrap;
     transition: all 0.3s ease;
     min-height: 44px;
+    flex: 0 0 calc(50% - 0.25rem);
+    max-width: calc(50% - 0.25rem);
 }
 
 .filter-chip:hover,
@@ -616,8 +619,9 @@ a {
    Responsive - Mobile Medium (480px+)
    ==================================== */
 @media (min-width: 480px) {
-    .quick-filters-mobile {
-        grid-template-columns: repeat(3, 1fr);
+    .filter-chip {
+        flex: 0 0 calc(33.333% - 0.34rem);
+        max-width: calc(33.333% - 0.34rem);
     }
 }
 
@@ -656,12 +660,11 @@ a {
     }
 
     .main-content {
-        margin-top: 140px;
+        margin-top: 150px;
     }
 
     .quick-filters-mobile {
         padding: 0 2.5rem 1.5rem 2.5rem;
-        grid-template-columns: repeat(5, 1fr);
         gap: 0.8rem;
         margin-top: 70px;
     }
@@ -670,6 +673,8 @@ a {
         padding: 0.7rem 1rem;
         font-size: 0.95rem;
         min-height: 52px;
+        flex: 0 0 calc(20% - 0.64rem);
+        max-width: calc(20% - 0.64rem);
     }
 
     .filter-chip i {
@@ -677,7 +682,7 @@ a {
     }
 
     .map-section {
-        height: 500px;
+        height: 550px;
         margin: 2rem 2.5rem;
         border-radius: 25px;
     }
