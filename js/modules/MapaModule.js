@@ -182,22 +182,47 @@ export const MapaModule = (() => {
             return;
         }
 
+        console.log('🔍 Attempting to get user location with high accuracy...');
+
+        // Primer intento: Alta precisión
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
                 currentLocation = { lat: latitude, lng: longitude };
+                console.log('✅ Location obtained (high accuracy):', latitude, longitude);
                 
                 if (onSuccess) {
                     onSuccess(latitude, longitude);
                 }
             },
             (error) => {
-                console.error('Error getting user location:', error);
-                if (onError) onError(error);
+                console.warn('⚠️ High accuracy failed, trying low accuracy...', error);
+                
+                // Segundo intento: Baja precisión (más rápido, menos preciso)
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        currentLocation = { lat: latitude, lng: longitude };
+                        console.log('✅ Location obtained (low accuracy):', latitude, longitude);
+                        
+                        if (onSuccess) {
+                            onSuccess(latitude, longitude);
+                        }
+                    },
+                    (error2) => {
+                        console.error('❌ Both attempts failed:', error2);
+                        if (onError) onError(error2);
+                    },
+                    {
+                        enableHighAccuracy: false,
+                        timeout: 10000,
+                        maximumAge: 60000 // Acepta ubicación de hasta 1 minuto de antigüedad
+                    }
+                );
             },
             {
                 enableHighAccuracy: true,
-                timeout: 5000,
+                timeout: 8000,
                 maximumAge: 0
             }
         );
@@ -237,6 +262,51 @@ export const MapaModule = (() => {
     }
 
     /**
+     * Monitorea la ubicación del usuario continuamente
+     * @param {Function} onUpdate - Callback cuando cambia la ubicación
+     * @param {Function} onError - Callback cuando hay error
+     * @returns {number} - ID del watch para poder detenerlo
+     */
+    function watchUserLocation(onUpdate, onError) {
+        if (!('geolocation' in navigator)) {
+            console.error('Geolocation not supported');
+            return null;
+        }
+
+        const watchId = navigator.geolocation.watchPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                currentLocation = { lat: latitude, lng: longitude };
+                
+                if (onUpdate) {
+                    onUpdate(latitude, longitude);
+                }
+            },
+            (error) => {
+                console.error('Watch location error:', error);
+                if (onError) onError(error);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 30000
+            }
+        );
+
+        return watchId;
+    }
+
+    /**
+     * Detiene el monitoreo de ubicación
+     * @param {number} watchId - ID del watch a detener
+     */
+    function stopWatchingLocation(watchId) {
+        if (watchId) {
+            navigator.geolocation.clearWatch(watchId);
+        }
+    }
+
+    /**
      * Obtiene el objeto del mapa
      * @returns {Object|null} - Objeto de Google Maps
      */
@@ -253,6 +323,8 @@ export const MapaModule = (() => {
         clearMarkers,
         filterMarkersByCategory,
         getUserLocation,
+        watchUserLocation,
+        stopWatchingLocation,
         calculateDistance,
         getCurrentLocation,
         getMap

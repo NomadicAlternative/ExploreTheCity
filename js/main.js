@@ -289,31 +289,30 @@ const App = (() => {
             },
             (error) => {
                 console.error('❌ Geolocation error:', error);
-                let errorMessage = 'Could not get your location';
+                let errorMessage = '';
                 
                 if (error.code === 1) {
-                    errorMessage = 'Location permission denied';
+                    errorMessage = 'Location permission denied. Please allow location access in your browser settings.';
                 } else if (error.code === 2) {
                     // Error code 2: Position unavailable
-                    errorMessage = 'Using default location (Petrer)';
-                    console.log('⚠️ Location unavailable, using default location');
+                    errorMessage = 'Location unavailable. Please check:\n\n' +
+                                 '1. System Location Services are enabled\n' +
+                                 '2. Browser has location permission\n' +
+                                 '3. WiFi/GPS is active\n\n' +
+                                 'macOS: System Preferences → Security & Privacy → Location Services';
                     
-                    // Usar ubicación por defecto (Petrer, España)
-                    const config = window.GOOGLE_MAPS_CONFIG || {};
-                    const defaultLat = config.defaultCenter?.lat || 38.4836;
-                    const defaultLng = config.defaultCenter?.lng || -0.7768;
-                    
-                    MapaModule.centerMap(defaultLat, defaultLng, 14);
-                    
-                    UIController.setLocationButtonLoading(false);
-                    UIController.showNotification(errorMessage, 'warning');
-                    return;
+                    console.log('⚠️ Location unavailable. Troubleshooting:');
+                    console.log('1. Check System Preferences → Security & Privacy → Location Services');
+                    console.log('2. Check browser location permissions');
+                    console.log('3. Try reloading the page');
+                    console.log('4. Check if WiFi is enabled (helps with location)');
                 } else if (error.code === 3) {
-                    errorMessage = 'Location request timeout';
+                    errorMessage = 'Location request timeout. Please try again.';
                 }
                 
                 UIController.setLocationButtonLoading(false);
-                UIController.showNotification(errorMessage, 'error');
+                alert(errorMessage); // Usar alert para mostrar instrucciones completas
+                UIController.showNotification('Location error - Check console for details', 'error');
             }
         );
     }
