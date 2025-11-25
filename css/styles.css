@@ -47,6 +47,8 @@
     border-radius: 50%;
     background: rgba(152, 193, 217, 0.1);
     pointer-events: none;
+    will-change: transform, opacity;
+    transform: translateZ(0);
 }
 
 .circle-1 {
@@ -96,6 +98,8 @@
     border-radius: 50%;
     animation: ringRotate 2s linear infinite;
     opacity: 0.6;
+    will-change: transform;
+    transform: translateZ(0);
 }
 
 /* Efecto de brillo */
@@ -106,6 +110,8 @@
     border-radius: 50%;
     background: radial-gradient(circle, rgba(152, 193, 217, 0.3) 0%, transparent 70%);
     animation: glowPulse 2s ease-in-out infinite;
+    will-change: opacity, transform;
+    transform: translateZ(0);
 }
 
 /* Logo principal */
@@ -120,6 +126,9 @@
         logoSpin 1.5s ease-in-out 1s forwards,
         logoPulse 1s ease-in-out 2.5s 2;
     filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4));
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 /* Splash Screen - Responsive */
@@ -1418,23 +1427,17 @@ a {
     }
 }
 
-/* Entrada dramática del logo - Cae y rebota */
+/* Entrada dramática del logo - Simplificada y más fluida */
 @keyframes logoEntrance {
     0% {
-        transform: translateY(-100vh) rotate(-180deg) scale(0.3);
+        transform: scale(0.3) rotate(-45deg);
         opacity: 0;
     }
-    50% {
-        transform: translateY(30px) rotate(10deg) scale(1.1);
-    }
-    65% {
-        transform: translateY(-15px) rotate(-5deg) scale(0.95);
-    }
-    80% {
-        transform: translateY(8px) rotate(2deg) scale(1.05);
+    60% {
+        transform: scale(1.1) rotate(5deg);
     }
     100% {
-        transform: translateY(0) rotate(0deg) scale(1);
+        transform: scale(1) rotate(0deg);
         opacity: 1;
     }
 }
@@ -1442,29 +1445,20 @@ a {
 /* Rotación 360° del logo */
 @keyframes logoSpin {
     0% {
-        transform: rotate(0deg) scale(1);
-    }
-    50% {
-        transform: rotate(180deg) scale(1.15);
+        transform: rotate(0deg);
     }
     100% {
-        transform: rotate(360deg) scale(1);
+        transform: rotate(360deg);
     }
 }
 
-/* Pulso del logo - Late */
+/* Pulso del logo - Late - Simplificado */
 @keyframes logoPulse {
     0%, 100% {
         transform: scale(1);
     }
-    25% {
-        transform: scale(1.2);
-    }
     50% {
-        transform: scale(0.9);
-    }
-    75% {
-        transform: scale(1.15);
+        transform: scale(1.1);
     }
 }
 
