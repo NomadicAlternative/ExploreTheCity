@@ -55,10 +55,16 @@ const App = (() => {
             isInitialized = true;
             console.log('✅ Explore the City initialized successfully');
 
-            // Mensaje de bienvenida
+            // Ocultar splash screen después de 3 segundos
             setTimeout(() => {
-                UIController.showNotification('Welcome to Explore the City! 🏰');
-            }, 500);
+                const splashScreen = document.getElementById('splashScreen');
+                if (splashScreen) {
+                    // Esperar a que termine la animación antes de remover
+                    setTimeout(() => {
+                        splashScreen.remove();
+                    }, 500);
+                }
+            }, 3000);
 
         } catch (error) {
             console.error('❌ Error initializing app:', error);
