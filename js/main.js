@@ -263,11 +263,19 @@ const App = (() => {
      * Obtiene la ubicación del usuario
      */
     function getUserLocation() {
+        console.log('🗺️ Getting user location...');
+        
+        if (!MapaModule.getMap()) {
+            console.error('❌ Map not initialized yet');
+            UIController.showNotification('Map is not ready yet', 'error');
+            return;
+        }
+
         UIController.setLocationButtonLoading(true);
 
         MapaModule.getUserLocation(
             (lat, lng) => {
-                console.log('User location:', lat, lng);
+                console.log('✅ User location obtained:', lat, lng);
                 
                 // Centrar mapa en ubicación del usuario
                 MapaModule.addUserMarker(lat, lng);
@@ -280,9 +288,19 @@ const App = (() => {
                 UIController.showNotification('Location obtained successfully! 📍');
             },
             (error) => {
-                console.error('Geolocation error:', error);
+                console.error('❌ Geolocation error:', error);
+                let errorMessage = 'Could not get your location';
+                
+                if (error.code === 1) {
+                    errorMessage = 'Location permission denied';
+                } else if (error.code === 2) {
+                    errorMessage = 'Location unavailable';
+                } else if (error.code === 3) {
+                    errorMessage = 'Location request timeout';
+                }
+                
                 UIController.setLocationButtonLoading(false);
-                UIController.showNotification('Could not get your location', 'error');
+                UIController.showNotification(errorMessage, 'error');
             }
         );
     }
