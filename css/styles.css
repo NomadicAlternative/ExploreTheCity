@@ -315,6 +315,15 @@ a {
     font-size: 0.9rem;
 }
 
+/* Textos alternativos para filtros */
+.filter-text-short {
+    display: none;
+}
+
+.filter-text-full {
+    display: inline;
+}
+
 /* ====================================
    Layout Desktop - Oculto en móvil
    ==================================== */
@@ -513,20 +522,16 @@ a {
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
-    padding: 0.7rem 0.6rem;
+    padding: 0.7rem 0.5rem;
     background-color: var(--secondary-color);
     color: var(--primary-color);
     border-radius: 10px;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 500;
     transition: all 0.3s ease;
     flex: 1 1 calc(50% - 0.3rem);
-    min-width: 110px;
-    white-space: normal;
-    text-align: center;
-    line-height: 1.3;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 120px;
+    white-space: nowrap;
 }
 
 .action-btn:hover {
@@ -535,7 +540,7 @@ a {
 }
 
 .action-btn i {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     flex-shrink: 0;
 }
 
@@ -604,15 +609,13 @@ a {
     }
 
     .action-btn {
-        font-size: 0.7rem;
-        padding: 0.6rem 0.3rem;
-        gap: 0.25rem;
-        min-width: 100px;
-        line-height: 1.2;
+        font-size: 0.75rem;
+        padding: 0.6rem 0.4rem;
+        gap: 0.3rem;
     }
 
     .action-btn i {
-        font-size: 0.75rem;
+        font-size: 0.8rem;
     }
 
     .favorites-btn-main {
@@ -628,6 +631,32 @@ a {
     .filter-chip {
         flex: 0 0 calc(33.333% - 0.34rem);
         max-width: calc(33.333% - 0.34rem);
+    }
+}
+
+/* ====================================
+   Responsive - Tablet Small (iPad Mini) (768px - 820px)
+   ==================================== */
+@media (min-width: 768px) and (max-width: 820px) {
+    .filter-chip {
+        padding: 0.5rem 0.3rem;
+        font-size: 0.75rem;
+        flex: 0 0 calc(20% - 0.48rem);
+        max-width: calc(20% - 0.48rem);
+        gap: 0.2rem;
+    }
+
+    .filter-chip i {
+        font-size: 0.8rem;
+    }
+    
+    /* Mostrar versión corta en iPad Mini */
+    .filter-text-full {
+        display: none;
+    }
+    
+    .filter-text-short {
+        display: inline;
     }
 }
 
@@ -671,20 +700,26 @@ a {
 
     .quick-filters-mobile {
         padding: 0 2.5rem 1.5rem 2.5rem;
-        gap: 0.8rem;
+        gap: 0.6rem;
         margin-top: 70px;
     }
 
     .filter-chip {
-        padding: 0.7rem 1rem;
-        font-size: 0.95rem;
-        min-height: 52px;
-        flex: 0 0 calc(20% - 0.64rem);
-        max-width: calc(20% - 0.64rem);
+        padding: 0.6rem 0.4rem;
+        font-size: 0.8rem;
+        min-height: 48px;
+        flex: 0 0 calc(20% - 0.48rem);
+        max-width: calc(20% - 0.48rem);
+        gap: 0.25rem;
+        overflow: hidden;
+        line-height: 1.2;
+        word-break: break-word;
+        hyphens: auto;
     }
 
     .filter-chip i {
-        font-size: 1rem;
+        font-size: 0.85rem;
+        flex-shrink: 0;
     }
 
     .map-section {
@@ -755,16 +790,14 @@ a {
     }
 
     .action-btn {
-        padding: 1rem 0.7rem;
-        font-size: 0.95rem;
+        padding: 1rem 0.8rem;
+        font-size: 1rem;
         border-radius: 12px;
         min-height: 52px;
-        min-width: 140px;
-        line-height: 1.4;
     }
 
     .action-btn i {
-        font-size: 1rem;
+        font-size: 1.1rem;
     }
 
     .favorite-btn {
