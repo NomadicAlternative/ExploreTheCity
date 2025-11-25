@@ -41,8 +41,8 @@
 }
 
 .splash-logo {
-    width: 120px;
-    height: 120px;
+    width: 360px;
+    height: 360px;
     object-fit: contain;
     margin-bottom: 1.5rem;
     animation: logoScale 0.8s ease forwards;
@@ -93,8 +93,8 @@
 /* Splash Screen - Responsive */
 @media (max-width: 768px) {
     .splash-logo {
-        width: 100px;
-        height: 100px;
+        width: 300px;
+        height: 300px;
     }
     
     .splash-title {
