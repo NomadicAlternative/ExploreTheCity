@@ -314,6 +314,119 @@ export const MapaModule = (() => {
         return map;
     }
 
+    /**
+     * Obtiene el centro actual del mapa
+     * @returns {Object|null} - Objeto con lat y lng
+     */
+    function getMapCenter() {
+        if (!map) {
+            console.error('Map not initialized');
+            return null;
+        }
+        const center = map.getCenter();
+        return {
+            lat: center.lat(),
+            lng: center.lng()
+        };
+    }
+
+    /**
+     * Obtiene los bounds (límites) visibles del mapa
+     * @returns {Object|null} - Objeto con bounds de Google Maps
+     */
+    function getMapBounds() {
+        if (!map) {
+            console.error('Map not initialized');
+            return null;
+        }
+        return map.getBounds();
+    }
+
+    /**
+     * Obtiene información de ubicación mediante Reverse Geocoding
+     * @param {number} lat - Latitud
+     * @param {number} lng - Longitud
+     * @returns {Promise<Object>} - Promesa con información de ubicación
+     */
+    async function reverseGeocode(lat, lng) {
+        try {
+            const geocoder = new google.maps.Geocoder();
+            const latlng = { lat, lng };
+
+            return new Promise((resolve, reject) => {
+                geocoder.geocode({ location: latlng }, (results, status) => {
+                    if (status === 'OK' && results[0]) {
+                        // Extraer ciudad y país
+                        let city = '';
+                        let country = '';
+
+                        for (const component of results[0].address_components) {
+                            if (component.types.includes('locality')) {
+                                city = component.long_name;
+                            }
+                            if (component.types.includes('administrative_area_level_2') && !city) {
+                                city = component.long_name;
+                            }
+                            if (component.types.includes('country')) {
+                                country = component.long_name;
+                            }
+                        }
+
+                        resolve({
+                            city: city || 'Unknown',
+                            country: country || 'Unknown',
+                            fullAddress: results[0].formatted_address,
+                            lat,
+                            lng
+                        });
+                    } else {
+                        reject(new Error(`Geocoder failed: ${status}`));
+                    }
+                });
+            });
+        } catch (error) {
+            console.error('Error in reverse geocoding:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Agrega listener para cuando el mapa se mueve/centra
+     * @param {Function} callback - Función a ejecutar cuando cambia el centro
+     */
+    function onMapCenterChanged(callback) {
+        if (!map) {
+            console.error('Map not initialized');
+            return;
+        }
+
+        google.maps.event.addListener(map, 'center_changed', () => {
+            const center = getMapCenter();
+            if (callback && center) {
+                callback(center);
+            }
+        });
+    }
+
+    /**
+     * Agrega listener para cuando el mapa deja de moverse (idle)
+     * @param {Function} callback - Función a ejecutar cuando el mapa está idle
+     */
+    function onMapIdle(callback) {
+        if (!map) {
+            console.error('Map not initialized');
+            return;
+        }
+
+        google.maps.event.addListener(map, 'idle', () => {
+            const center = getMapCenter();
+            const bounds = getMapBounds();
+            if (callback) {
+                callback(center, bounds);
+            }
+        });
+    }
+
     // API pública del módulo
     return {
         initMap,
@@ -327,7 +440,12 @@ export const MapaModule = (() => {
         stopWatchingLocation,
         calculateDistance,
         getCurrentLocation,
-        getMap
+        getMap,
+        getMapCenter,
+        getMapBounds,
+        reverseGeocode,
+        onMapCenterChanged,
+        onMapIdle
     };
 })();
 

@@ -685,6 +685,12 @@ Source: Google Places
             // Inicializar Places Service con el mapa
             POIDataModule.initPlacesService(mapInstance);
 
+            // Configurar listener para cuando el mapa se mueva y se detenga
+            setupMapLocationListener();
+
+            // Actualizar ubicación inicial
+            updateLocationFromMap();
+
             // Cargar POIs iniciales (categoría "all") - ya no es necesario mostrar automáticamente
             // Los usuarios deberán hacer clic en un filtro para ver los POIs en el modal
             console.log('✅ Map ready - Click on a filter to see places');
@@ -693,6 +699,55 @@ Source: Google Places
         } catch (error) {
             console.error('❌ Error initializing map:', error);
             UIController.showNotification('Error loading map. Please refresh the page.', 'error');
+        }
+    }
+
+    /**
+     * Configura el listener para detectar cambios de ubicación en el mapa
+     */
+    function setupMapLocationListener() {
+        // Usar 'idle' para detectar cuando el usuario termina de mover el mapa
+        MapaModule.onMapIdle(async (center, bounds) => {
+            if (center) {
+                console.log('🗺️ Map location changed:', center);
+                await updateLocationFromMap();
+            }
+        });
+    }
+
+    /**
+     * Actualiza la ubicación basándose en el centro del mapa
+     */
+    async function updateLocationFromMap() {
+        try {
+            const center = MapaModule.getMapCenter();
+            if (!center) return;
+
+            // Actualizar la ubicación del usuario en POIDataModule
+            POIDataModule.setUserLocation(center.lat, center.lng);
+
+            // Hacer reverse geocoding para obtener ciudad y país
+            const locationInfo = await MapaModule.reverseGeocode(center.lat, center.lng);
+            
+            if (locationInfo) {
+                // Actualizar el texto del header
+                updateLocationText(locationInfo.city, locationInfo.country);
+                console.log(`📍 Location updated: ${locationInfo.city}, ${locationInfo.country}`);
+            }
+        } catch (error) {
+            console.error('❌ Error updating location from map:', error);
+        }
+    }
+
+    /**
+     * Actualiza el texto de ubicación en el header
+     * @param {string} city - Nombre de la ciudad
+     * @param {string} country - Nombre del país
+     */
+    function updateLocationText(city, country) {
+        const locationText = document.querySelector('.location-text');
+        if (locationText) {
+            locationText.textContent = `${city}, ${country}`;
         }
     }
 
