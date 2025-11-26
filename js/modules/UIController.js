@@ -469,6 +469,13 @@ export const UIController = (() => {
                 `;
             }
 
+            // Botón de más información (siempre disponible)
+            buttonsHTML += `
+                <button class="action-btn" data-action="more-info" data-poi-id="${poi.id}">
+                    <i class="fas fa-info-circle"></i> More Info
+                </button>
+            `;
+
             // Botón de sitio web
             if (poi.website || poi.url) {
                 const websiteUrl = poi.website || poi.url;
@@ -535,6 +542,15 @@ export const UIController = (() => {
             directionsBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 getDirections(poi);
+            });
+        }
+
+        // Botón de más información
+        const moreInfoBtn = card.querySelector('[data-action="more-info"]');
+        if (moreInfoBtn) {
+            moreInfoBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openPOIDetailsModal(poi);
             });
         }
 
@@ -1061,6 +1077,575 @@ export const UIController = (() => {
         console.log('✅ FavoritesModule set in UIController');
     }
 
+    /**
+     * Abre el modal de detalles de un POI
+     * @param {Object} poi - POI a mostrar
+     * @param {Object} details - Detalles adicionales del POI (opcional)
+     */
+    function openPOIDetailsModal(poi, details = null) {
+        const modal = document.getElementById('poiDetailsModal');
+        const body = document.getElementById('poiDetailsBody');
+        
+        if (!modal || !body) return;
+
+        // Guardar el POI completo en el modal para usarlo después
+        modal.dataset.currentPoi = JSON.stringify(poi);
+
+        // Mostrar modal con loading
+        modal.classList.add('active');
+        body.innerHTML = `
+            <div class="poi-details-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading details...</p>
+            </div>
+        `;
+
+        // Si ya tenemos detalles, mostrarlos
+        if (details) {
+            renderPOIDetails(poi, details);
+        } else if (poi.place_id) {
+            // Cargar detalles desde la API
+            loadPOIDetails(poi);
+        } else {
+            // Sin place_id, mostrar fallback
+            renderPOIFallback(poi);
+        }
+    }
+
+    /**
+     * Cierra el modal de detalles
+     */
+    function closePOIDetailsModal() {
+        const modal = document.getElementById('poiDetailsModal');
+        if (modal) {
+            modal.classList.remove('active');
+            // Limpiar el POI guardado
+            delete modal.dataset.currentPoi;
+        }
+    }
+
+    /**
+     * Carga los detalles del POI desde la API
+     * @param {Object} poi - POI básico
+     */
+    async function loadPOIDetails(poi) {
+        try {
+            const details = await POIDataModule.fetchPlaceDetails(poi.place_id);
+            renderPOIDetails(poi, details);
+        } catch (error) {
+            console.error('Error loading POI details:', error);
+            renderPOIFallback(poi);
+        }
+    }
+
+    /**
+     * Renderiza los detalles completos del POI
+     * @param {Object} poi - POI básico
+     * @param {Object} details - Detalles de Google Places
+     */
+    function renderPOIDetails(poi, details) {
+        const body = document.getElementById('poiDetailsBody');
+        if (!body) return;
+
+        const photos = details.photos || [];
+        const reviews = details.reviews || [];
+        const openingHours = details.opening_hours;
+        const rating = details.rating || poi.rating || 0;
+        const totalRatings = details.user_ratings_total || poi.totalRatings || 0;
+        const priceLevel = details.price_level !== undefined ? details.price_level : poi.priceLevel;
+        const phone = details.formatted_phone_number || '';
+        const website = details.website || '';
+        const address = details.formatted_address || poi.address || '';
+
+        let html = '';
+
+        // Galería de fotos
+        if (photos.length > 0) {
+            html += `
+                <div class="poi-details-photos">
+                    <div class="poi-photos-carousel">
+                        ${photos.slice(0, 5).map(photo => `
+                            <div class="poi-photo-item">
+                                <img src="${photo.getUrl({ maxWidth: 800, maxHeight: 600 })}" alt="${poi.name}">
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${photos.length > 1 ? `
+                        <div class="poi-photos-indicators">
+                            ${photos.slice(0, 5).map((_, i) => `
+                                <div class="photo-indicator ${i === 0 ? 'active' : ''}"></div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        } else if (poi.photo) {
+            html += `
+                <div class="poi-details-photos">
+                    <div class="poi-photos-carousel">
+                        <div class="poi-photo-item">
+                            <img src="${poi.photo}" alt="${poi.name}">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Información principal
+        html += `
+            <div class="poi-details-info">
+                <h2 class="poi-details-name">${poi.name}</h2>
+                <p class="poi-details-category">${formatCategory(poi.category)} ${poi.types ? '· ' + formatTypes(poi.types) : ''}</p>
+                
+                ${rating > 0 ? `
+                    <div class="poi-details-rating">
+                        <div class="poi-details-stars">${generateStars(rating)}</div>
+                        <span class="poi-details-rating-text">${rating.toFixed(1)} (${totalRatings} reviews)</span>
+                    </div>
+                ` : ''}
+                
+                ${priceLevel !== undefined && priceLevel !== null ? `
+                    <div class="poi-details-price">${'€'.repeat(priceLevel)}</div>
+                ` : ''}
+            </div>
+        `;
+
+        // Descripción o información del lugar
+        if (details.editorial_summary?.overview) {
+            html += `
+                <div class="poi-details-section">
+                    <h3 class="poi-details-section-title">
+                        <i class="fas fa-info-circle"></i> About
+                    </h3>
+                    <p class="poi-details-description">${details.editorial_summary.overview}</p>
+                </div>
+            `;
+        } else if (poi.description) {
+            html += `
+                <div class="poi-details-section">
+                    <h3 class="poi-details-section-title">
+                        <i class="fas fa-info-circle"></i> About
+                    </h3>
+                    <p class="poi-details-description">${poi.description}</p>
+                </div>
+            `;
+        }
+
+        // Horarios
+        if (openingHours && openingHours.weekday_text) {
+            const today = new Date().getDay();
+            const daysMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const currentDay = daysMap[today];
+
+            html += `
+                <div class="poi-details-section">
+                    <h3 class="poi-details-section-title">
+                        <i class="fas fa-clock"></i> Hours
+                    </h3>
+                    <div class="poi-details-hours">
+                        ${openingHours.weekday_text.map(text => {
+                            const isToday = text.startsWith(currentDay);
+                            return `
+                                <div class="poi-hour-item ${isToday ? 'today' : ''}">
+                                    <span class="poi-hour-day">${text.split(':')[0]}</span>
+                                    <span class="poi-hour-time">${text.split(':').slice(1).join(':').trim()}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Contacto
+        if (phone || website || address) {
+            html += `
+                <div class="poi-details-section">
+                    <h3 class="poi-details-section-title">
+                        <i class="fas fa-address-card"></i> Contact
+                    </h3>
+                    <div class="poi-details-contact">
+                        ${phone ? `
+                            <div class="poi-contact-item">
+                                <div class="poi-contact-icon">
+                                    <i class="fas fa-phone"></i>
+                                </div>
+                                <div class="poi-contact-text">
+                                    <a href="tel:${phone}">${phone}</a>
+                                </div>
+                            </div>
+                        ` : ''}
+                        ${website ? `
+                            <div class="poi-contact-item">
+                                <div class="poi-contact-icon">
+                                    <i class="fas fa-globe"></i>
+                                </div>
+                                <div class="poi-contact-text">
+                                    <a href="${website}" target="_blank" rel="noopener">Visit Website</a>
+                                </div>
+                            </div>
+                        ` : ''}
+                        ${address ? `
+                            <div class="poi-contact-item">
+                                <div class="poi-contact-icon">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div class="poi-contact-text">
+                                    ${address}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Reviews
+        if (reviews.length > 0) {
+            html += `
+                <div class="poi-details-section">
+                    <h3 class="poi-details-section-title">
+                        <i class="fas fa-comments"></i> Reviews
+                    </h3>
+                    <div class="poi-details-reviews">
+                        ${reviews.slice(0, 3).map(review => `
+                            <div class="poi-review-item">
+                                <div class="poi-review-header">
+                                    <span class="poi-review-author">${review.author_name}</span>
+                                    <span class="poi-review-stars">${generateStars(review.rating)}</span>
+                                </div>
+                                <p class="poi-review-text">${review.text}</p>
+                                <span class="poi-review-time">${review.relative_time_description}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Botones de acción
+        const isFavorite = favoritesModule ? favoritesModule.isFavorite(poi.id) : false;
+        html += `
+            <div class="poi-details-actions">
+                <button class="poi-action-btn" data-action="directions" data-poi-id="${poi.id}">
+                    <i class="fas fa-directions"></i> Directions
+                </button>
+                <button class="poi-action-btn secondary" data-action="favorite" data-poi-id="${poi.id}">
+                    <i class="${isFavorite ? 'fas' : 'far'} fa-heart"></i> ${isFavorite ? 'Saved' : 'Save'}
+                </button>
+                ${website ? `
+                    <a href="${website}" target="_blank" class="poi-action-btn" style="grid-column: span 2;">
+                        <i class="fas fa-external-link-alt"></i> Visit Website
+                    </a>
+                ` : ''}
+            </div>
+        `;
+
+        body.innerHTML = html;
+        setupPOIDetailsListeners();
+    }
+
+    /**
+     * Renderiza el fallback cuando no hay detalles
+     * Intenta buscar en Wikipedia primero
+     * @param {Object} poi - POI básico
+     */
+    async function renderPOIFallback(poi) {
+        const body = document.getElementById('poiDetailsBody');
+        if (!body) return;
+
+        // Mostrar loading mientras busca en Wikipedia
+        body.innerHTML = `
+            <div class="poi-details-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Searching for information...</p>
+            </div>
+        `;
+
+        // Intentar buscar en Wikipedia
+        let wikiInfo = null;
+        if (window.WikipediaModule) {
+            try {
+                // Buscar con el nombre del lugar y la ciudad si está disponible
+                const city = poi.city || poi.address?.split(',')[1]?.trim() || '';
+                wikiInfo = await window.WikipediaModule.searchMultiLanguage(poi.name, city);
+                
+                if (!wikiInfo && poi.name.includes(' ')) {
+                    // Intentar solo con la primera parte del nombre
+                    const shortName = poi.name.split(' ')[0];
+                    wikiInfo = await window.WikipediaModule.searchMultiLanguage(shortName, city);
+                }
+            } catch (error) {
+                console.error('Error searching Wikipedia:', error);
+            }
+        }
+
+        // Si encontró información en Wikipedia, mostrarla
+        if (wikiInfo) {
+            renderPOIWithWikipedia(poi, wikiInfo);
+        } else {
+            // Si no, mostrar fallback original
+            renderPOIFallbackOriginal(poi);
+        }
+    }
+
+    /**
+     * Renderiza POI con información de Wikipedia
+     * @param {Object} poi - POI básico
+     * @param {Object} wikiInfo - Información de Wikipedia
+     */
+    function renderPOIWithWikipedia(poi, wikiInfo) {
+        const body = document.getElementById('poiDetailsBody');
+        if (!body) return;
+
+        const isFavorite = favoritesModule ? favoritesModule.isFavorite(poi.id) : false;
+        const searchQuery = encodeURIComponent(`${poi.name} ${poi.city || ''}`);
+
+        let html = '';
+
+        // Foto (Wikipedia o POI)
+        const photoUrl = wikiInfo.thumbnail || poi.photo;
+        if (photoUrl) {
+            html += `
+                <div class="poi-details-photos">
+                    <div class="poi-photos-carousel">
+                        <div class="poi-photo-item">
+                            <img src="${photoUrl}" alt="${poi.name}">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Información principal
+        html += `
+            <div class="poi-details-info">
+                <h2 class="poi-details-name">${poi.name}</h2>
+                <p class="poi-details-category">${formatCategory(poi.category)}</p>
+                ${poi.rating ? `
+                    <div class="poi-details-rating">
+                        <div class="poi-details-stars">${generateStars(poi.rating)}</div>
+                        <span class="poi-details-rating-text">${poi.rating.toFixed(1)}</span>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        // Información de Wikipedia
+        html += `
+            <div class="poi-details-section">
+                <h3 class="poi-details-section-title">
+                    <i class="fab fa-wikipedia-w"></i> About
+                </h3>
+                <p class="poi-details-description">${wikiInfo.extract}</p>
+                <a href="${wikiInfo.url}" target="_blank" rel="noopener" class="poi-wiki-link">
+                    <i class="fas fa-external-link-alt"></i> Read more on ${wikiInfo.source}
+                </a>
+            </div>
+        `;
+
+        // Botones de acción
+        html += `
+            <div class="poi-details-actions">
+                <button class="poi-action-btn" data-action="directions" data-poi-id="${poi.id}">
+                    <i class="fas fa-directions"></i> Directions
+                </button>
+                <button class="poi-action-btn secondary" data-action="favorite" data-poi-id="${poi.id}">
+                    <i class="${isFavorite ? 'fas' : 'far'} fa-heart"></i> ${isFavorite ? 'Saved' : 'Save'}
+                </button>
+                <a href="https://www.google.com/search?q=${searchQuery}" target="_blank" class="poi-action-btn" style="grid-column: span 2;">
+                    <i class="fas fa-search"></i> Search on Google
+                </a>
+            </div>
+        `;
+
+        body.innerHTML = html;
+        setupPOIDetailsListeners();
+    }
+
+    /**
+     * Renderiza el fallback original cuando no hay información
+     * @param {Object} poi - POI básico
+     */
+    function renderPOIFallbackOriginal(poi) {
+        const body = document.getElementById('poiDetailsBody');
+        if (!body) return;
+
+        const searchQuery = encodeURIComponent(`${poi.name} ${poi.city || ''}`);
+        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${searchQuery}`;
+        const isFavorite = favoritesModule ? favoritesModule.isFavorite(poi.id) : false;
+
+        body.innerHTML = `
+            <div class="poi-details-fallback">
+                ${poi.photo ? `
+                    <div class="poi-details-photos">
+                        <div class="poi-photos-carousel">
+                            <div class="poi-photo-item">
+                                <img src="${poi.photo}" alt="${poi.name}">
+                            </div>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="poi-fallback-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                `}
+                
+                <div class="poi-details-info">
+                    <h2 class="poi-details-name">${poi.name}</h2>
+                    <p class="poi-details-category">${formatCategory(poi.category)}</p>
+                    ${poi.rating ? `
+                        <div class="poi-details-rating">
+                            <div class="poi-details-stars">${generateStars(poi.rating)}</div>
+                            <span class="poi-details-rating-text">${poi.rating.toFixed(1)}</span>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <h3 class="poi-fallback-title">Limited Information</h3>
+                <p class="poi-fallback-text">
+                    We don't have detailed information for this place yet, 
+                    but you can explore it through the options below.
+                </p>
+                
+                <div class="poi-fallback-actions">
+                    <a href="https://www.google.com/search?q=${searchQuery}" target="_blank" class="poi-fallback-btn">
+                        <div class="poi-fallback-btn-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="poi-fallback-btn-content">
+                            <div class="poi-fallback-btn-title">Search on Google</div>
+                            <div class="poi-fallback-btn-desc">Learn more about this place</div>
+                        </div>
+                    </a>
+                    
+                    <button class="poi-fallback-btn" data-action="directions" data-poi-id="${poi.id}">
+                        <div class="poi-fallback-btn-icon">
+                            <i class="fas fa-directions"></i>
+                        </div>
+                        <div class="poi-fallback-btn-content">
+                            <div class="poi-fallback-btn-title">Get Directions</div>
+                            <div class="poi-fallback-btn-desc">Navigate to this location</div>
+                        </div>
+                    </button>
+                    
+                    <button class="poi-fallback-btn" data-action="favorite" data-poi-id="${poi.id}">
+                        <div class="poi-fallback-btn-icon">
+                            <i class="${isFavorite ? 'fas' : 'far'} fa-heart"></i>
+                        </div>
+                        <div class="poi-fallback-btn-content">
+                            <div class="poi-fallback-btn-title">${isFavorite ? 'Saved to Favorites' : 'Add to Favorites'}</div>
+                            <div class="poi-fallback-btn-desc">Save for later</div>
+                        </div>
+                    </button>
+                    
+                    <a href="${googleMapsUrl}" target="_blank" class="poi-fallback-btn">
+                        <div class="poi-fallback-btn-icon">
+                            <i class="fas fa-map"></i>
+                        </div>
+                        <div class="poi-fallback-btn-content">
+                            <div class="poi-fallback-btn-title">View on Maps</div>
+                            <div class="poi-fallback-btn-desc">Open in Google Maps</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        `;
+
+        setupPOIDetailsListeners();
+    }
+
+    /**
+     * Configura los listeners del modal de detalles
+     */
+    function setupPOIDetailsListeners() {
+        const modal = document.getElementById('poiDetailsModal');
+        const closeBtn = document.getElementById('poiDetailsClose');
+        const backBtn = document.getElementById('poiDetailsBack');
+        const body = document.getElementById('poiDetailsBody');
+        
+        // Recuperar el POI actual del modal
+        let currentPoi = null;
+        if (modal && modal.dataset.currentPoi) {
+            try {
+                currentPoi = JSON.parse(modal.dataset.currentPoi);
+            } catch (e) {
+                console.error('Error parsing current POI:', e);
+            }
+        }
+        
+        if (closeBtn) {
+            closeBtn.onclick = closePOIDetailsModal;
+        }
+        
+        if (backBtn) {
+            backBtn.onclick = closePOIDetailsModal;
+        }
+        
+        // Cerrar al hacer click fuera del contenido
+        if (modal) {
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    closePOIDetailsModal();
+                }
+            };
+        }
+
+        // Event delegation para botones de acción
+        if (body) {
+            body.onclick = (e) => {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+                
+                const action = btn.getAttribute('data-action');
+                const poiId = btn.getAttribute('data-poi-id');
+                
+                if (action === 'directions' && poiId) {
+                    e.preventDefault();
+                    getDirections(poiId);
+                } else if (action === 'favorite' && poiId && currentPoi) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Pasar el objeto POI completo
+                    toggleFavorite(currentPoi);
+                    
+                    // Actualizar el botón
+                    const isFav = favoritesModule ? favoritesModule.isFavorite(poiId) : false;
+                    btn.innerHTML = `<i class="${isFav ? 'fas' : 'far'} fa-heart"></i> ${isFav ? 'Saved' : 'Save'}`;
+                    
+                    // Forzar que el botón pierda el foco
+                    btn.blur();
+                }
+            };
+        }
+    }
+
+    /**
+     * Formatea la categoría para mostrar
+     * @param {string} category - Categoría
+     * @returns {string} - Categoría formateada
+     */
+    function formatCategory(category) {
+        const categories = {
+            'historical': 'Historical Site',
+            'restaurants': 'Restaurant',
+            'nature': 'Nature',
+            'events': 'Event'
+        };
+        return categories[category] || category;
+    }
+
+    /**
+     * Formatea los tipos de Google Places
+     * @param {Array} types - Array de tipos
+     * @returns {string} - Tipos formateados
+     */
+    function formatTypes(types) {
+        if (!types || types.length === 0) return '';
+        return types.slice(0, 2).map(t => t.replace(/_/g, ' ')).join(', ');
+    }
+
     // API pública del módulo
     return {
         init,
@@ -1069,6 +1654,8 @@ export const UIController = (() => {
         closeSidebar,
         openPOIModal,
         closePOIModal,
+        openPOIDetailsModal,
+        closePOIDetailsModal,
         updateFavoriteButton,
         updateFilterChips,
         updateFilterCheckboxes,

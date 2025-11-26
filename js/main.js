@@ -12,6 +12,7 @@ import { FavoritesModule } from './modules/FavoritesModule.js';
 import { UIController } from './modules/UIController.js';
 import { RoutingModule } from './modules/RoutingModule.js';
 import { ResponsiveModule } from './modules/ResponsiveModule.js';
+import { WikipediaModule } from './modules/WikipediaModule.js';
 
 // ====================================
 // Aplicación Principal
@@ -993,11 +994,12 @@ ${event.url ? '¿Deseas comprar tickets?' : ''}
 
 // Exponer App globalmente para callbacks
 window.App = App;
+window.WikipediaModule = WikipediaModule;
 
 // ====================================
 // Inicialización cuando el DOM esté listo
 // ====================================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('� DOM loaded, initializing App...');
+    console.log('📄 DOM loaded, initializing App...');
     App.init();
 });
