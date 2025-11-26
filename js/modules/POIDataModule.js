@@ -620,12 +620,53 @@ export const POIDataModule = (() => {
         return userLocation;
     }
 
+    /**
+     * Obtiene detalles completos de un POI desde Google Places API
+     * @param {string} placeId - ID del lugar de Google Places
+     * @returns {Promise<Object>} - Promesa con los detalles del lugar
+     */
+    async function fetchPlaceDetails(placeId) {
+        if (!placesService) {
+            throw new Error('Places Service not initialized');
+        }
+
+        return new Promise((resolve, reject) => {
+            const request = {
+                placeId: placeId,
+                fields: [
+                    'name',
+                    'formatted_address',
+                    'formatted_phone_number',
+                    'website',
+                    'rating',
+                    'user_ratings_total',
+                    'reviews',
+                    'photos',
+                    'opening_hours',
+                    'price_level',
+                    'types',
+                    'geometry',
+                    'url'
+                ]
+            };
+
+            placesService.getDetails(request, (place, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+                    resolve(place);
+                } else {
+                    reject(new Error(`Failed to fetch place details: ${status}`));
+                }
+            });
+        });
+    }
+
     // API pública del módulo
     return {
         init,
         initPlacesService,
         setUserLocation,
         fetchPOIsFromGooglePlaces,
+        fetchPlaceDetails,
         getAllPOIs,
         getFilteredPOIs,
         getPOIById,
