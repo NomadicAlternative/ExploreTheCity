@@ -8,11 +8,18 @@ export const UIController = (() => {
     let elements = {};
     let currentView = 'home';
     let isMobile = false;
+    let favoritesModule = null; // Referencia al módulo de favoritos
 
     /**
      * Inicializa el UIController
+     * @param {Object} dependencies - Dependencias opcionales
      */
-    function init() {
+    function init(dependencies = {}) {
+        // Establecer dependencias
+        if (dependencies.favoritesModule) {
+            favoritesModule = dependencies.favoritesModule;
+        }
+        
         cacheElements();
         detectDevice();
         setupEventListeners();
@@ -39,6 +46,13 @@ export const UIController = (() => {
             searchInputDesktop: document.getElementById('searchInputDesktop'),
             filterCheckboxes: document.querySelectorAll('.filter-checkbox'),
             favoritesBtnDesktop: document.getElementById('favoritesBtnDesktop'),
+            
+            // Modal POI
+            poiModal: document.getElementById('poiModal'),
+            poiModalClose: document.getElementById('poiModalClose'),
+            poiModalTitle: document.getElementById('poiModalTitle'),
+            poiModalBody: document.getElementById('poiModalBody'),
+            poiModalGrid: document.getElementById('poiModalGrid'),
             
             // Compartidos
             locationBtn: document.getElementById('locationBtn'),
@@ -77,6 +91,26 @@ export const UIController = (() => {
             elements.overlay.addEventListener('click', closeSidebar);
         }
 
+        // Modal POI
+        if (elements.poiModalClose) {
+            elements.poiModalClose.addEventListener('click', closePOIModal);
+        }
+        if (elements.poiModal) {
+            elements.poiModal.addEventListener('click', (e) => {
+                // Cerrar si se hace click en el fondo oscuro (no en el contenido)
+                if (e.target === elements.poiModal) {
+                    closePOIModal();
+                }
+            });
+        }
+
+        // Tecla ESC para cerrar modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && elements.poiModal?.classList.contains('active')) {
+                closePOIModal();
+            }
+        });
+
         // Responsive
         window.addEventListener('resize', handleResize);
     }
@@ -105,6 +139,518 @@ export const UIController = (() => {
             elements.overlay.classList.remove('active');
         }
         document.body.style.overflow = 'auto';
+    }
+
+    /**
+     * Abre el modal de POIs con una categoría específica
+     * @param {string} category - Categoría a mostrar
+     * @param {Array} pois - Array de POIs a mostrar
+     */
+    function openPOIModal(category, pois = []) {
+        if (!elements.poiModal) return;
+
+        // Actualizar título del modal según categoría
+        updateModalTitle(category);
+
+        // Renderizar POIs en el grid del modal
+        renderPOIsInModal(pois);
+
+        // Mostrar modal
+        elements.poiModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        console.log(`📋 Modal opened with ${pois.length} POIs for category: ${category}`);
+    }
+
+    /**
+     * Cierra el modal de POIs
+     */
+    function closePOIModal() {
+        if (!elements.poiModal) return;
+
+        elements.poiModal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+
+        // Limpiar contenido después de la animación
+        setTimeout(() => {
+            if (elements.poiModalGrid) {
+                elements.poiModalGrid.innerHTML = '';
+            }
+        }, 300);
+
+        console.log('📋 Modal closed');
+    }
+
+    /**
+     * Actualiza el título del modal según la categoría
+     * @param {string} category - Categoría seleccionada
+     */
+    function updateModalTitle(category) {
+        const categoryConfig = {
+            all: { icon: 'fa-globe', text: 'All Places' },
+            historical: { icon: 'fa-landmark', text: 'Historical Places' },
+            restaurants: { icon: 'fa-utensils', text: 'Restaurants & Cafés' },
+            nature: { icon: 'fa-tree', text: 'Nature & Parks' },
+            events: { icon: 'fa-calendar', text: 'Events' }
+        };
+
+        const config = categoryConfig[category] || categoryConfig.all;
+
+        if (elements.poiModalTitle) {
+            elements.poiModalTitle.innerHTML = `
+                <i class="fas ${config.icon}"></i>
+                <span>${config.text}</span>
+            `;
+        }
+    }
+
+    /**
+     * Renderiza los POIs en el grid del modal
+     * @param {Array} pois - Array de POIs a renderizar
+     */
+    function renderPOIsInModal(pois) {
+        if (!elements.poiModalGrid) return;
+
+        if (pois.length === 0) {
+            elements.poiModalGrid.innerHTML = `
+                <p class="empty-message" style="grid-column: 1 / -1;">
+                    No places found in this category
+                </p>
+            `;
+            return;
+        }
+
+        // Limpiar grid
+        elements.poiModalGrid.innerHTML = '';
+
+        // Log para debug
+        console.log(`🎨 Rendering ${pois.length} POIs in modal`);
+        
+        // Verificar cuántos tienen imágenes
+        const withImages = pois.filter(poi => poi.photo || poi.image || (poi.photos && poi.photos.length > 0)).length;
+        console.log(`📸 ${withImages} POIs have images`);
+
+        // Renderizar cada POI
+        pois.forEach((poi, index) => {
+            const card = createPOICard(poi);
+            elements.poiModalGrid.appendChild(card);
+            
+            // Log de eventos con sus URLs
+            if (poi.category === 'events' || poi.source === 'ticketmaster') {
+                console.log(`🎫 Event "${poi.name}" - Ticket URL: ${poi.url || poi.ticketUrl || 'N/A'}`);
+                console.log(`   Image: ${poi.photo || poi.image || 'N/A'}`);
+            }
+        });
+    }
+
+    /**
+     * Crea una tarjeta de POI para el modal
+     * @param {Object} poi - Datos del POI
+     * @param {Object} options - Opciones de configuración
+     * @param {boolean} options.isFavoriteView - Si es true, muestra botón de eliminar en lugar de agregar
+     * @returns {HTMLElement} - Elemento HTML de la tarjeta
+     */
+    function createPOICard(poi, options = {}) {
+        const { isFavoriteView = false } = options;
+        
+        const card = document.createElement('div');
+        card.className = 'poi-card-mobile';
+        card.dataset.poiId = poi.id;
+
+        // Determinar si es un evento
+        const isEvent = poi.category === 'events' || poi.source === 'ticketmaster';
+
+        // Imagen (priorizar photo, luego image, luego photos[0])
+        let imageUrl = null;
+        if (poi.photo) {
+            imageUrl = poi.photo;
+        } else if (poi.image) {
+            imageUrl = poi.image;
+        } else if (poi.photos && poi.photos.length > 0) {
+            imageUrl = poi.photos[0];
+        }
+
+        const imageHTML = imageUrl ? `
+            <div class="poi-image" style="background-image: url('${imageUrl}')" 
+                 onerror="this.classList.add('no-image'); this.style.backgroundImage='';">
+            </div>
+        ` : '';
+
+        // Rating (solo para POIs, no para eventos)
+        const starsHTML = !isEvent && poi.rating > 0 ? generateStars(poi.rating) : '';
+
+        // Botón de favorito o eliminar según la vista
+        let favoriteBtnHTML = '';
+        if (isFavoriteView) {
+            // Vista de favoritos: botón de eliminar
+            favoriteBtnHTML = `
+                <button class="favorite-remove-btn" data-poi-id="${poi.id}" aria-label="Remove from favorites">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            `;
+        } else {
+            // Vista normal: botón de agregar/quitar favoritos
+            const isFavorite = checkIfFavorite(poi.id);
+            const heartClass = isFavorite ? 'fas' : 'far';
+            favoriteBtnHTML = `
+                <button class="favorite-btn" data-poi-id="${poi.id}" aria-label="Add to favorites">
+                    <i class="${heartClass} fa-heart"></i>
+                </button>
+            `;
+        }
+
+        // Estado abierto/cerrado (solo para POIs, no eventos)
+        let statusHTML = '';
+        if (!isEvent && poi.isOpen !== undefined) {
+            const isOpen = poi.isOpen;
+            const statusClass = isOpen ? 'status-open' : 'status-closed';
+            const statusText = isOpen ? 'Open now' : 'Closed';
+            statusHTML = `
+                <div class="detail-item">
+                    <i class="fas fa-clock"></i>
+                    <span class="${statusClass}">${statusText}</span>
+                </div>
+            `;
+        }
+
+        // Para eventos, mostrar fecha y hora
+        let eventDateHTML = '';
+        if (isEvent) {
+            if (poi.eventDate && poi.eventTime) {
+                eventDateHTML = `
+                    <div class="detail-item">
+                        <i class="fas fa-calendar"></i>
+                        <span>${poi.eventDate}</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-clock"></i>
+                        <span>${poi.eventTime}</span>
+                    </div>
+                `;
+            } else if (poi.date) {
+                // Formatear fecha si viene en formato raw
+                const date = new Date(poi.date);
+                const formattedDate = date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+                eventDateHTML = `
+                    <div class="detail-item">
+                        <i class="fas fa-calendar"></i>
+                        <span>${formattedDate}</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Precio
+        let priceHTML = '';
+        if (poi.priceLevel) {
+            const priceText = isEvent ? poi.priceLevel : formatPriceLevel(poi.priceLevel);
+            priceHTML = `
+                <div class="detail-item">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span>${priceText}</span>
+                </div>
+            `;
+        }
+
+        card.innerHTML = `
+            ${imageHTML}
+            <div class="poi-header">
+                <h3 class="poi-title">${poi.name}</h3>
+                ${favoriteBtnHTML}
+            </div>
+            ${starsHTML ? `
+                <div class="poi-rating">
+                    ${starsHTML}
+                    <span class="rating-text">(${(poi.rating || 0).toFixed(1)}${poi.totalRatings ? ` - ${poi.totalRatings} reviews` : ''})</span>
+                </div>
+            ` : ''}
+            <p class="poi-description">${poi.description || 'No description available'}</p>
+            <div class="poi-details">
+                <div class="detail-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>${poi.distance || 'Unknown distance'}</span>
+                </div>
+                ${statusHTML}
+                ${eventDateHTML}
+                ${priceHTML}
+                ${poi.address ? `
+                    <div class="detail-item">
+                        <i class="fas fa-location-dot"></i>
+                        <span>${poi.address}</span>
+                    </div>
+                ` : ''}
+            </div>
+            ${createActionButtons(poi)}
+        `;
+
+        // Añadir event listeners
+        setupCardEventListeners(card, poi, { isFavoriteView });
+
+        return card;
+    }
+
+    /**
+     * Formatea el nivel de precio
+     * @param {number|string} priceLevel - Nivel de precio (1-4) o string
+     * @returns {string} - Precio formateado
+     */
+    function formatPriceLevel(priceLevel) {
+        if (typeof priceLevel === 'string') return priceLevel;
+        
+        const levels = {
+            1: '$ (Económico)',
+            2: '$$ (Moderado)',
+            3: '$$$ (Caro)',
+            4: '$$$$ (Muy caro)'
+        };
+        return levels[priceLevel] || 'N/A';
+    }
+
+    /**
+     * Crea los botones de acción para un POI
+     * @param {Object} poi - Datos del POI
+     * @returns {string} - HTML de los botones
+     */
+    function createActionButtons(poi) {
+        const isEvent = poi.category === 'events' || poi.source === 'ticketmaster';
+        let buttonsHTML = '<div class="poi-actions">';
+
+        // Para EVENTOS: Botón de tickets prioritario
+        if (isEvent) {
+            // Botón de tickets (prioridad: url, ticketUrl)
+            const ticketUrl = poi.url || poi.ticketUrl;
+            if (ticketUrl) {
+                buttonsHTML += `
+                    <a href="${ticketUrl}" target="_blank" rel="noopener noreferrer" class="action-btn event-ticket-btn">
+                        <i class="fas fa-ticket-alt"></i> Get Tickets
+                    </a>
+                `;
+            }
+
+            // Botón de direcciones al venue
+            if (poi.coordinates || poi.location) {
+                buttonsHTML += `
+                    <button class="action-btn" data-action="directions" data-poi-id="${poi.id}">
+                        <i class="fas fa-directions"></i> Directions
+                    </button>
+                `;
+            }
+
+            // Botón de más información
+            if (poi.url && !ticketUrl) {
+                buttonsHTML += `
+                    <a href="${poi.url}" target="_blank" rel="noopener noreferrer" class="action-btn">
+                        <i class="fas fa-info-circle"></i> More Info
+                    </a>
+                `;
+            }
+        } else {
+            // Para POIs normales: botones estándar
+            
+            // Botón de direcciones (siempre disponible si hay coordenadas)
+            if (poi.coordinates || poi.location) {
+                buttonsHTML += `
+                    <button class="action-btn" data-action="directions" data-poi-id="${poi.id}">
+                        <i class="fas fa-directions"></i> Directions
+                    </button>
+                `;
+            }
+
+            // Botón de teléfono
+            if (poi.phone) {
+                buttonsHTML += `
+                    <a href="tel:${poi.phone}" class="action-btn">
+                        <i class="fas fa-phone"></i> Call
+                    </a>
+                `;
+            }
+
+            // Botón de sitio web
+            if (poi.website || poi.url) {
+                const websiteUrl = poi.website || poi.url;
+                buttonsHTML += `
+                    <a href="${websiteUrl}" target="_blank" rel="noopener noreferrer" class="action-btn">
+                        <i class="fas fa-globe"></i> Website
+                    </a>
+                `;
+            }
+        }
+
+        buttonsHTML += '</div>';
+        return buttonsHTML;
+    }
+
+    /**
+     * Configura event listeners para una tarjeta de POI
+     * @param {HTMLElement} card - Elemento de la tarjeta
+     * @param {Object} poi - Datos del POI
+     * @param {Object} options - Opciones de configuración
+     */
+    function setupCardEventListeners(card, poi, options = {}) {
+        const { isFavoriteView = false, onRemove = null } = options;
+        
+        // Botón de favoritos (agregar/quitar)
+        const favoriteBtn = card.querySelector('.favorite-btn');
+        if (favoriteBtn) {
+            favoriteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleFavorite(poi); // Pasar el objeto completo POI
+            });
+        }
+
+        // Botón de eliminar (en vista de favoritos)
+        const removeBtn = card.querySelector('.favorite-remove-btn');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (onRemove && typeof onRemove === 'function') {
+                    onRemove(poi.id);
+                } else {
+                    // Eliminar de favoritos
+                    if (favoritesModule && typeof favoritesModule.removeFavorite === 'function') {
+                        favoritesModule.removeFavorite(poi.id);
+                        updateFavoriteButtons(poi.id, false);
+                        
+                        // Eliminar la tarjeta del DOM con animación
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.8)';
+                        setTimeout(() => {
+                            card.remove();
+                        }, 300);
+                        
+                        showNotification(`${poi.name} removed from favorites`, 'success');
+                        console.log('❤️ Favorite removed:', poi.name);
+                    }
+                }
+            });
+        }
+
+        // Botón de direcciones
+        const directionsBtn = card.querySelector('[data-action="directions"]');
+        if (directionsBtn) {
+            directionsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                getDirections(poi);
+            });
+        }
+
+        // Click en toda la tarjeta para centrar en mapa (solo si no es vista de favoritos)
+        if (!isFavoriteView) {
+            card.addEventListener('click', () => {
+                centerMapOnPOI(poi);
+            });
+        }
+    }
+
+    /**
+     * Verifica si un POI es favorito
+     * @param {string} poiId - ID del POI
+     * @returns {boolean} - true si es favorito
+     */
+    function checkIfFavorite(poiId) {
+        if (favoritesModule && typeof favoritesModule.isFavorite === 'function') {
+            return favoritesModule.isFavorite(poiId);
+        }
+        return false;
+    }
+
+    /**
+     * Toggle favorito de un POI
+     * @param {Object} poi - Objeto completo del POI
+     */
+    function toggleFavorite(poi) {
+        if (!poi || !poi.id) {
+            console.error('Invalid POI for favorite toggle');
+            return;
+        }
+
+        // Verificar si FavoritesModule está disponible
+        if (!favoritesModule || typeof favoritesModule.toggleFavorite !== 'function') {
+            console.error('FavoritesModule not available');
+            showNotification('Favorites feature not available', 'error');
+            return;
+        }
+
+        // Toggle el favorito
+        const isFavorite = favoritesModule.toggleFavorite(poi);
+        
+        // Actualizar TODOS los botones de favoritos con este POI ID
+        updateFavoriteButtons(poi.id, isFavorite);
+        
+        // Notificación
+        const message = isFavorite 
+            ? `${poi.name} added to favorites ❤️` 
+            : `${poi.name} removed from favorites`;
+        showNotification(message, 'success');
+        
+        console.log(`❤️ Favorite toggled: ${poi.name} - isFavorite: ${isFavorite}`);
+    }
+
+    /**
+     * Actualiza todos los botones de favoritos para un POI específico
+     * @param {string} poiId - ID del POI
+     * @param {boolean} isFavorite - Estado de favorito
+     */
+    function updateFavoriteButtons(poiId, isFavorite) {
+        // Buscar TODOS los botones con este POI ID
+        const buttons = document.querySelectorAll(`.favorite-btn[data-poi-id="${poiId}"]`);
+        
+        buttons.forEach(btn => {
+            const icon = btn.querySelector('i');
+            if (icon) {
+                // Cambiar clase del icono (fas = relleno, far = outline)
+                icon.className = isFavorite ? 'fas fa-heart' : 'far fa-heart';
+            }
+            
+            // Actualizar atributos de accesibilidad
+            const title = isFavorite ? 'Remove from favorites' : 'Add to favorites';
+            btn.setAttribute('title', title);
+            btn.setAttribute('aria-label', title);
+        });
+        
+        console.log(`Updated ${buttons.length} favorite buttons for POI: ${poiId}`);
+    }
+
+    /**
+     * Obtener direcciones a un POI
+     * @param {Object} poi - Datos del POI
+     */
+    function getDirections(poi) {
+        if (!poi || !poi.coordinates) {
+            console.error('POI or coordinates not available');
+            showNotification('Cannot get directions - location not available', 'error');
+            return;
+        }
+        
+        const { lat, lng } = poi.coordinates;
+        
+        // Crear URL de Google Maps Directions
+        // api=1 usa la nueva Google Maps API
+        // destination puede ser coordenadas lat,lng o place_id
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+        
+        // Abrir en nueva pestaña
+        window.open(url, '_blank', 'noopener,noreferrer');
+        
+        // Notificación al usuario
+        showNotification(`Opening directions to ${poi.name}...`, 'info');
+        
+        console.log(`🗺️ Opening directions to: ${poi.name} (${lat}, ${lng})`);
+    }
+
+    /**
+     * Centrar mapa en un POI
+     * @param {Object} poi - Datos del POI
+     */
+    function centerMapOnPOI(poi) {
+        // Esta función será manejada por el módulo de mapa
+        if (window.MapaModule && typeof window.MapaModule.centerOnPOI === 'function') {
+            window.MapaModule.centerOnPOI(poi);
+        }
     }
 
     /**
@@ -506,12 +1052,23 @@ export const UIController = (() => {
         return elements[name] || null;
     }
 
+    /**
+     * Establece el módulo de favoritos
+     * @param {Object} module - Módulo de favoritos
+     */
+    function setFavoritesModule(module) {
+        favoritesModule = module;
+        console.log('✅ FavoritesModule set in UIController');
+    }
+
     // API pública del módulo
     return {
         init,
         showView,
         openSidebar,
         closeSidebar,
+        openPOIModal,
+        closePOIModal,
         updateFavoriteButton,
         updateFilterChips,
         updateFilterCheckboxes,
@@ -522,6 +1079,11 @@ export const UIController = (() => {
         showLoading,
         getCurrentView,
         isMobileDevice,
-        getElement
+        getElement,
+        setFavoritesModule,       // Nueva función para establecer el módulo
+        toggleFavorite,           // Agregar función de toggle favoritos
+        updateFavoriteButtons,    // Agregar función de actualización de botones
+        checkIfFavorite,          // Agregar función de verificación
+        createPOICard             // Exponer función para crear tarjetas
     };
 })();

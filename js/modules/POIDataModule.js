@@ -150,20 +150,19 @@ export const POIDataModule = (() => {
      * @returns {Promise<Array>} - Array de POIs
      */
     function searchPlacesByCategory(category, location, radius) {
+        // Para NATURE: usar búsqueda de texto principal
+        if (category === 'nature') {
+            return searchNaturePlaces(location, radius);
+        }
+        
+        // Para otras categorías: búsqueda normal por tipos
         return new Promise((resolve, reject) => {
             const types = CATEGORY_MAPPING[category] || [];
             const allResults = [];
             let totalSearches = types.length;
             let searchesCompleted = 0;
-            
-            // Palabras clave adicionales para naturaleza
-            const natureKeywords = category === 'nature' 
-                ? ['montaña', 'sierra', 'río', 'sendero', 'ruta', 'mirador', 'embalse', 'valle', 'barranco']
-                : [];
-            
-            totalSearches += natureKeywords.length;
 
-            // Si no hay tipos ni keywords, retornar vacío
+            // Si no hay tipos, retornar vacío
             if (totalSearches === 0) {
                 resolve([]);
                 return;
@@ -184,7 +183,6 @@ export const POIDataModule = (() => {
                         }
                     });
                     
-                    console.log(`🌲 Found ${uniquePOIs.length} unique nature places (after filtering)`);
                     resolve(uniquePOIs);
                 }
             };
@@ -199,37 +197,7 @@ export const POIDataModule = (() => {
 
                 placesService.nearbySearch(request, (results, status) => {
                     if (status === google.maps.places.PlacesServiceStatus.OK) {
-                        // Filtrar resultados según categoría
-                        let filteredResults = results;
-                        
-                        // Para naturaleza: excluir parques urbanos pequeños
-                        if (category === 'nature') {
-                            filteredResults = results.filter(place => {
-                                const name = place.name.toLowerCase();
-                                const types = place.types || [];
-                                
-                                // Excluir parques urbanos, plazas, parques infantiles
-                                const isUrbanPark = 
-                                    types.includes('park') && 
-                                    (name.includes('parque infantil') || 
-                                     name.includes('plaza') ||
-                                     name.includes('jardín') ||
-                                     name.includes('jardin') ||
-                                     name.includes('parque municipal'));
-                                
-                                // Excluir restaurantes que puedan aparecer
-                                const isRestaurant = 
-                                    types.includes('restaurant') || 
-                                    types.includes('cafe') || 
-                                    types.includes('bar') ||
-                                    types.includes('food');
-                                
-                                // Solo incluir lugares naturales reales
-                                return !isUrbanPark && !isRestaurant;
-                            });
-                        }
-                        
-                        const processedResults = filteredResults.map(place => 
+                        const processedResults = results.map(place => 
                             processGooglePlace(place, category)
                         );
                         allResults.push(...processedResults);
@@ -238,47 +206,179 @@ export const POIDataModule = (() => {
                     checkCompletion();
                 });
             });
+        });
+    }
+
+    /**
+     * Búsqueda especializada para lugares de naturaleza
+     * Usa Text Search con query en español para mejores resultados
+     * @param {Object} location - Google Maps LatLng
+     * @param {number} radius - Radio en metros
+     * @returns {Promise<Array>} - Array de POIs
+     */
+    function searchNaturePlaces(location, radius) {
+        return new Promise((resolve, reject) => {
+            console.log('🌳 Searching nature places with text query...');
             
-            // Búsquedas adicionales por palabras clave para naturaleza
-            natureKeywords.forEach(keyword => {
+            // Query principal en español
+            const request = {
+                location: location,
+                radius: radius,
+                query: 'lugares de naturaleza cerca de mi'
+            };
+
+            placesService.textSearch(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                    console.log(`🌲 Found ${results.length} raw nature results`);
+                    
+                    // Filtrar para excluir lugares urbanos/no naturales
+                    const filteredResults = results.filter(place => {
+                        const name = place.name.toLowerCase();
+                        const types = place.types || [];
+                        
+                        // Palabras clave de lugares NO naturales (excluir)
+                        const urbanKeywords = [
+                            'hotel', 'restaurante', 'restaurant', 'cafe', 'bar',
+                            'tienda', 'shop', 'store', 'centro comercial', 'mall',
+                            'parking', 'aparcamiento', 'gasolinera', 'gas station',
+                            'hospital', 'farmacia', 'pharmacy', 'supermercado',
+                            'iglesia', 'church', 'ayuntamiento', 'city hall'
+                        ];
+                        
+                        // Verificar si contiene keywords urbanas
+                        const hasUrbanKeyword = urbanKeywords.some(keyword => 
+                            name.includes(keyword)
+                        );
+                        
+                        // Verificar tipos urbanos
+                        const urbanTypes = [
+                            'restaurant', 'cafe', 'bar', 'food', 'lodging',
+                            'store', 'shopping_mall', 'gas_station', 'hospital',
+                            'pharmacy', 'church', 'mosque', 'synagogue'
+                        ];
+                        
+                        const hasUrbanType = types.some(type => 
+                            urbanTypes.includes(type)
+                        );
+                        
+                        // Palabras clave POSITIVAS de naturaleza
+                        const natureKeywords = [
+                            'parque natural', 'natural park', 'sierra', 'montaña', 
+                            'mountain', 'río', 'river', 'embalse', 'reservoir', 
+                            'sendero', 'trail', 'ruta', 'route', 'mirador', 
+                            'viewpoint', 'valle', 'valley', 'bosque', 'forest',
+                            'barranco', 'canyon', 'cueva', 'cave', 'cascada',
+                            'waterfall', 'laguna', 'lake', 'playa', 'beach',
+                            'costa', 'coast', 'acantilado', 'cliff', 'zona verde',
+                            'área recreativa', 'recreational area', 'pinar',
+                            'pine forest', 'ermita', 'chapel'
+                        ];
+                        
+                        const hasNatureKeyword = natureKeywords.some(keyword =>
+                            name.includes(keyword)
+                        );
+                        
+                        // Tipos POSITIVOS de naturaleza
+                        const natureTypes = [
+                            'natural_feature', 'park', 'campground', 'hiking_area',
+                            'point_of_interest', 'tourist_attraction'
+                        ];
+                        
+                        const hasNatureType = types.some(type =>
+                            natureTypes.includes(type)
+                        );
+                        
+                        // INCLUIR si:
+                        // - Tiene keyword de naturaleza O tiene tipo de naturaleza
+                        // - Y NO tiene keywords urbanas ni tipos urbanos
+                        const isNaturalPlace = (hasNatureKeyword || hasNatureType) && 
+                                              !hasUrbanKeyword && 
+                                              !hasUrbanType;
+                        
+                        return isNaturalPlace;
+                    });
+                    
+                    console.log(`✅ Filtered to ${filteredResults.length} natural places`);
+                    
+                    // Procesar resultados
+                    const processedResults = filteredResults.map(place => 
+                        processGooglePlace(place, 'nature')
+                    );
+                    
+                    // Eliminar duplicados
+                    const uniquePOIs = [];
+                    const seenIds = new Set();
+                    
+                    processedResults.forEach(poi => {
+                        if (!seenIds.has(poi.id)) {
+                            seenIds.add(poi.id);
+                            uniquePOIs.push(poi);
+                        }
+                    });
+                    
+                    resolve(uniquePOIs);
+                } else {
+                    console.warn('⚠️ Nature text search failed:', status);
+                    // Fallback a búsqueda normal
+                    searchNaturePlacesFallback(location, radius)
+                        .then(resolve)
+                        .catch(reject);
+                }
+            });
+        });
+    }
+
+    /**
+     * Fallback para búsqueda de naturaleza si textSearch falla
+     * @param {Object} location - Google Maps LatLng
+     * @param {number} radius - Radio en metros
+     * @returns {Promise<Array>} - Array de POIs
+     */
+    function searchNaturePlacesFallback(location, radius) {
+        return new Promise((resolve, reject) => {
+            console.log('🔄 Using fallback nature search...');
+            
+            const types = CATEGORY_MAPPING['nature'] || [];
+            const allResults = [];
+            let totalSearches = types.length;
+            let searchesCompleted = 0;
+
+            if (totalSearches === 0) {
+                resolve([]);
+                return;
+            }
+
+            const checkCompletion = () => {
+                searchesCompleted++;
+                if (searchesCompleted === totalSearches) {
+                    const uniquePOIs = [];
+                    const seenIds = new Set();
+                    
+                    allResults.forEach(poi => {
+                        if (!seenIds.has(poi.id)) {
+                            seenIds.add(poi.id);
+                            uniquePOIs.push(poi);
+                        }
+                    });
+                    
+                    resolve(uniquePOIs);
+                }
+            };
+
+            types.forEach(type => {
                 const request = {
                     location: location,
                     radius: radius,
-                    query: keyword
+                    type: type
                 };
 
-                placesService.textSearch(request, (results, status) => {
+                placesService.nearbySearch(request, (results, status) => {
                     if (status === google.maps.places.PlacesServiceStatus.OK) {
-                        // Filtrar para excluir restaurantes y lugares urbanos
-                        const filteredResults = results.filter(place => {
-                            const name = place.name.toLowerCase();
-                            const types = place.types || [];
-                            
-                            // Excluir restaurantes
-                            const isRestaurant = 
-                                types.includes('restaurant') || 
-                                types.includes('cafe') || 
-                                types.includes('bar') ||
-                                types.includes('food') ||
-                                name.includes('restaurante') ||
-                                name.includes('bar') ||
-                                name.includes('cafetería');
-                            
-                            // Excluir parques urbanos
-                            const isUrbanPark = 
-                                name.includes('plaza') ||
-                                name.includes('parque infantil') ||
-                                name.includes('jardín municipal');
-                            
-                            return !isRestaurant && !isUrbanPark;
-                        });
-                        
-                        const processedResults = filteredResults.map(place => 
-                            processGooglePlace(place, category)
+                        const processedResults = results.map(place => 
+                            processGooglePlace(place, 'nature')
                         );
                         allResults.push(...processedResults);
                     }
-
                     checkCompletion();
                 });
             });

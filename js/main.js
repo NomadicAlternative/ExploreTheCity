@@ -40,13 +40,16 @@ const App = (() => {
             await EventsModule.init(); // Esperar a que cargue eventos de Ticketmaster
             FavoritesModule.init();
 
-            // 3. Inicializar routing
+            // 3. Establecer dependencias entre módulos
+            UIController.setFavoritesModule(FavoritesModule);
+
+            // 4. Inicializar routing
             RoutingModule.init();
 
-            // 4. Configurar integraciones entre módulos
+            // 5. Configurar integraciones entre módulos
             setupModuleIntegrations();
 
-            // 5. Configurar event listeners
+            // 6. Configurar event listeners
             setupEventListeners();
 
             // 6. Inicializar mapa (cuando Google Maps esté listo)
@@ -78,8 +81,11 @@ const App = (() => {
     function setupModuleIntegrations() {
         // Integración Favorites + UI
         FavoritesModule.onChange((favorites) => {
-            console.log('Favorites updated:', favorites.length);
+            console.log('❤️ Favorites updated:', favorites.length);
             updateFavoriteUI();
+            
+            // Sincronizar el estado de todos los botones de favoritos
+            syncAllFavoriteButtons();
         });
 
         // Integración Routing + UI
@@ -160,6 +166,15 @@ const App = (() => {
                 RoutingModule.navigateTo(target);
             });
         });
+
+        // Enlace de favoritos en los filtros
+        const favoritesFilterLinks = document.querySelectorAll('.filter-chip[href="#favorites"]');
+        favoritesFilterLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                RoutingModule.navigateTo('favorites');
+            });
+        });
     }
 
     /**
@@ -208,7 +223,8 @@ const App = (() => {
      */
     function setupFilterListeners() {
         // Chips móviles y desktop (ambos usan .filter-chip)
-        const filterChips = document.querySelectorAll('.filter-chip');
+        // Excluir el enlace de favoritos que usa href
+        const filterChips = document.querySelectorAll('.filter-chip[data-category]');
         filterChips.forEach(chip => {
             chip.addEventListener('click', async () => {
                 const category = chip.getAttribute('data-category');
@@ -228,21 +244,21 @@ const App = (() => {
     async function handleCategoryFilter(category) {
         console.log(`Filtering by ${category}...`);
         
-        // Si es eventos, cargar de Ticketmaster y mostrar como POIs
+        // Si es eventos, cargar de Ticketmaster y mostrar en modal
         if (category === 'events') {
-            loadEventsAsPOIs();
+            loadEventsInModal(category);
             return;
         }
         
-        // Para otras categorías, cargar desde Google Places
-        await loadPOIsByCategory(category);
+        // Para otras categorías, cargar desde Google Places y mostrar en modal
+        await loadPOIsByCategoryInModal(category);
     }
 
     /**
-     * Carga POIs por categoría desde Google Places
+     * Carga POIs por categoría desde Google Places y los muestra en modal
      * @param {string} category - Categoría a cargar
      */
-    async function loadPOIsByCategory(category) {
+    async function loadPOIsByCategoryInModal(category) {
         try {
             UIController.showLoading(true);
             
@@ -257,13 +273,17 @@ const App = (() => {
             
             if (pois.length === 0) {
                 UIController.showNotification(`No places found in ${category} category`, 'info');
+                // Abrir modal vacío
+                UIController.openPOIModal(category, []);
+                UIController.showLoading(false);
+                return;
             }
 
             // Actualizar mapa con marcadores
             updateMapMarkers(pois);
             
-            // Mostrar lista de POIs
-            displayPOIsList(pois);
+            // Abrir modal con los POIs
+            UIController.openPOIModal(category, pois);
             
             UIController.showLoading(false);
         } catch (error) {
@@ -274,9 +294,10 @@ const App = (() => {
     }
 
     /**
-     * Carga eventos de Ticketmaster y los muestra como tarjetas POI
+     * Carga eventos de Ticketmaster y los muestra en modal
+     * @param {string} category - Categoría (events)
      */
-    function loadEventsAsPOIs() {
+    function loadEventsInModal(category) {
         try {
             UIController.showLoading(true);
             
@@ -285,7 +306,7 @@ const App = (() => {
             
             if (events.length === 0) {
                 UIController.showNotification('No events found nearby', 'info');
-                displayPOIsList([]);
+                UIController.openPOIModal(category, []);
                 UIController.showLoading(false);
                 return;
             }
@@ -296,8 +317,8 @@ const App = (() => {
             // Actualizar mapa con marcadores de eventos
             updateMapMarkers(eventPOIs);
             
-            // Mostrar eventos como tarjetas POI
-            displayPOIsList(eventPOIs);
+            // Abrir modal con eventos como POIs
+            UIController.openPOIModal(category, eventPOIs);
             
             UIController.showLoading(false);
             UIController.showNotification(`${events.length} events loaded`, 'success');
@@ -351,174 +372,6 @@ const App = (() => {
     }
 
     /**
-     * Muestra la lista de POIs en la UI
-     * @param {Array} pois - Array de POIs a mostrar
-     */
-    function displayPOIsList(pois) {
-        const listMobile = document.getElementById('poiListMobile');
-        const listDesktop = document.getElementById('poiListDesktop');
-        
-        if (pois.length === 0) {
-            const emptyMessage = '<p class="empty-message">No places found in this category.</p>';
-            if (listMobile) listMobile.innerHTML = emptyMessage;
-            if (listDesktop) listDesktop.innerHTML = emptyMessage;
-            return;
-        }
-
-        const poisHTML = pois.map(poi => createPOICardHTML(poi)).join('');
-        
-        if (listMobile) listMobile.innerHTML = poisHTML;
-        if (listDesktop) listDesktop.innerHTML = poisHTML;
-        
-        // Agregar event listeners
-        setupPOICardListeners();
-    }
-
-    /**
-     * Crea el HTML de una tarjeta de POI
-     * @param {Object} poi - Datos del POI
-     * @returns {string} - HTML de la tarjeta
-     */
-    function createPOICardHTML(poi) {
-        const isFavorite = FavoritesModule.isFavorite(poi.id);
-        const favoriteIcon = isFavorite ? 'fas' : 'far';
-        const favoriteTitle = isFavorite ? 'Remove from favorites' : 'Add to favorites';
-        const distance = poi.distance ? POIDataModule.formatDistance(poi.distance) : 'N/A';
-        const isEvent = poi.category === 'events';
-        
-        // Para eventos, usar el precio directamente; para POIs, formatearlo
-        const priceLevel = isEvent ? poi.priceLevel : (poi.priceLevel ? POIDataModule.formatPriceLevel(poi.priceLevel) : '');
-        const openStatus = poi.isOpen === true ? 'Open now' : poi.isOpen === false ? 'Closed' : '';
-        
-        return `
-            <div class="poi-card-mobile poi-card-desktop" data-poi-id="${poi.id}" data-category="${poi.category}">
-                ${poi.photo ? `
-                    <div class="poi-image" style="background-image: url('${poi.photo}')"></div>
-                ` : ''}
-                <div class="poi-header">
-                    <h3 class="poi-title">${poi.name}</h3>
-                    <button class="favorite-btn" data-poi-id="${poi.id}" title="${favoriteTitle}" aria-label="${favoriteTitle}">
-                        <i class="${favoriteIcon} fa-heart"></i>
-                    </button>
-                </div>
-                
-                ${!isEvent && poi.rating > 0 ? `
-                <div class="poi-rating">
-                    ${generateStars(poi.rating)}
-                    <span class="rating-text">(${poi.rating.toFixed(1)}${poi.totalRatings ? ` - ${poi.totalRatings} reviews` : ''})</span>
-                </div>
-                ` : ''}
-                
-                <p class="poi-description">${poi.description}</p>
-                
-                <div class="poi-details">
-                    <div class="detail-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>${distance}</span>
-                    </div>
-                    ${openStatus ? `
-                    <div class="detail-item">
-                        <i class="fas fa-clock"></i>
-                        <span class="${poi.isOpen ? 'status-open' : 'status-closed'}">${openStatus}</span>
-                    </div>
-                    ` : ''}
-                    ${priceLevel ? `
-                    <div class="detail-item">
-                        <i class="fas fa-ticket-alt"></i>
-                        <span>${priceLevel}</span>
-                    </div>
-                    ` : ''}
-                </div>
-                
-                <div class="poi-actions">
-                    ${isEvent && poi.url ? `
-                    <a href="${poi.url}" target="_blank" class="action-btn event-ticket-btn">
-                        <i class="fas fa-ticket-alt"></i> Get Tickets
-                    </a>
-                    ` : `
-                    <button class="action-btn poi-directions-btn" data-poi-id="${poi.id}">
-                        <i class="fas fa-directions"></i> Directions
-                    </button>
-                    `}
-                    <button class="action-btn poi-info-btn" data-poi-id="${poi.id}">
-                        <i class="fas fa-info-circle"></i> More info
-                    </button>
-                </div>
-            </div>
-        `;
-    }
-
-    /**
-     * Genera HTML de estrellas según rating
-     * @param {number} rating - Rating del 0 al 5
-     * @returns {string} - HTML de estrellas
-     */
-    function generateStars(rating) {
-        let starsHTML = '';
-        const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
-
-        for (let i = 0; i < fullStars; i++) {
-            starsHTML += '<i class="fas fa-star"></i>';
-        }
-        if (hasHalfStar) {
-            starsHTML += '<i class="fas fa-star-half-alt"></i>';
-        }
-        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-        for (let i = 0; i < emptyStars; i++) {
-            starsHTML += '<i class="far fa-star"></i>';
-        }
-
-        return starsHTML;
-    }
-
-    /**
-     * Configura event listeners para las tarjetas de POI
-     */
-    function setupPOICardListeners() {
-        // Click en tarjeta para seleccionar POI
-        document.querySelectorAll('.poi-card-mobile, .poi-card-desktop').forEach(card => {
-            card.addEventListener('click', (e) => {
-                // Evitar si se clickeó un botón
-                if (e.target.closest('button')) return;
-                
-                const poiId = card.getAttribute('data-poi-id');
-                const poi = POIDataModule.getPOIById(poiId);
-                if (poi) {
-                    selectPOI(poi);
-                }
-            });
-        });
-
-        // Click en botón de favorito
-        document.querySelectorAll('.favorite-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const poiId = btn.getAttribute('data-poi-id');
-                togglePOIFavorite(poiId);
-            });
-        });
-
-        // Click en botón de direcciones
-        document.querySelectorAll('.poi-directions-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const poiId = btn.getAttribute('data-poi-id');
-                openPOIDirections(poiId);
-            });
-        });
-
-        // Click en botón de info
-        document.querySelectorAll('.poi-info-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const poiId = btn.getAttribute('data-poi-id');
-                showPOIInfo(poiId);
-            });
-        });
-    }
-
-    /**
      * Selecciona un POI y centra el mapa
      * @param {Object} poi - POI a seleccionar
      */
@@ -541,29 +394,86 @@ const App = (() => {
     function togglePOIFavorite(poiId) {
         const poi = POIDataModule.getPOIById(poiId);
         if (!poi) {
-            console.error('POI not found:', poiId);
+            console.error('❌ POI not found:', poiId);
+            UIController.showNotification('Place not found', 'error');
             return;
         }
         
-        const isFavorite = FavoritesModule.toggleFavorite(poi);
-        console.log('Toggled favorite:', poi.name, 'isFavorite:', isFavorite);
+        // Usar la función de UIController que maneja todo
+        UIController.toggleFavorite(poi);
         
-        // Actualizar TODOS los iconos del botón con este POI ID (mobile y desktop)
-        const buttons = document.querySelectorAll(`.favorite-btn[data-poi-id="${poiId}"]`);
-        console.log('Found buttons to update:', buttons.length);
+        console.log('✅ Favorite toggled via main.js:', poi.name);
+    }
+
+    /**
+     * Sincroniza todos los botones de favoritos en la página
+     */
+    function syncAllFavoriteButtons() {
+        // Obtener todos los botones de favoritos
+        const favoriteButtons = document.querySelectorAll('.favorite-btn[data-poi-id]');
         
-        buttons.forEach(btn => {
+        favoriteButtons.forEach(btn => {
+            const poiId = btn.getAttribute('data-poi-id');
+            const isFavorite = FavoritesModule.isFavorite(poiId);
+            
+            // Actualizar el icono
             const icon = btn.querySelector('i');
             if (icon) {
                 icon.className = isFavorite ? 'fas fa-heart' : 'far fa-heart';
             }
+            
+            // Actualizar atributos de accesibilidad
             const title = isFavorite ? 'Remove from favorites' : 'Add to favorites';
             btn.setAttribute('title', title);
             btn.setAttribute('aria-label', title);
         });
         
-        const message = isFavorite ? `${poi.name} added to favorites ❤️` : `${poi.name} removed from favorites`;
-        UIController.showNotification(message);
+        console.log(`🔄 Synced ${favoriteButtons.length} favorite buttons`);
+    }
+
+    /**
+     * Actualiza la UI de favoritos
+     */
+    function updateFavoriteUI() {
+        // Actualizar contador de favoritos (si existe)
+        const favCount = FavoritesModule.getFavoritesCount();
+        const favBadges = document.querySelectorAll('.favorites-count, .favorite-badge');
+        
+        favBadges.forEach(badge => {
+            badge.textContent = favCount;
+            badge.style.display = favCount > 0 ? 'flex' : 'none';
+        });
+        
+        // Si estamos en la vista de favoritos, recargar
+        if (UIController.getCurrentView() === 'favorites') {
+            loadAndDisplayFavorites();
+        }
+    }
+
+    /**
+     * Sincroniza todos los botones de favoritos en la página
+     */
+    function syncAllFavoriteButtons() {
+        // Obtener todos los botones de favoritos
+        const favoriteButtons = document.querySelectorAll('.favorite-btn[data-poi-id]');
+        
+        favoriteButtons.forEach(btn => {
+            const poiId = btn.getAttribute('data-poi-id');
+            const isFavorite = FavoritesModule.isFavorite(poiId);
+            
+            // Actualizar el icono
+            const icon = btn.querySelector('i');
+            if (icon) {
+                icon.className = isFavorite ? 'fas fa-heart' : 'far fa-heart';
+            }
+            
+            // Actualizar atributos de accesibilidad
+            const title = isFavorite ? 'Remove from favorites' : 'Add to favorites';
+            btn.setAttribute('title', title);
+            btn.setAttribute('aria-label', title);
+        });
+        
+        console.log(`🔄 Synced ${favoriteButtons.length} favorite buttons`);
     }
 
     /**
@@ -572,13 +482,37 @@ const App = (() => {
      */
     function openPOIDirections(poiId) {
         const poi = POIDataModule.getPOIById(poiId);
-        if (!poi) return;
+        if (!poi) {
+            console.error('POI not found:', poiId);
+            UIController.showNotification('Place not found', 'error');
+            return;
+        }
+        
+        if (!poi.coordinates || !poi.coordinates.lat || !poi.coordinates.lng) {
+            console.error('POI coordinates not available:', poi);
+            UIController.showNotification('Location not available for this place', 'error');
+            return;
+        }
         
         const { lat, lng } = poi.coordinates;
-        const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
         
-        window.open(url, '_blank');
-        UIController.showNotification('Opening Google Maps...');
+        // URL de Google Maps Directions API
+        // Incluir el nombre del lugar como parámetro adicional
+        const destinationParam = poi.address 
+            ? encodeURIComponent(poi.address)
+            : `${lat},${lng}`;
+        
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${destinationParam}&destination_place_id=${poi.id}`;
+        
+        // Abrir en nueva pestaña
+        window.open(url, '_blank', 'noopener,noreferrer');
+        
+        // Notificación
+        UIController.showNotification(`Opening directions to ${poi.name}...`, 'info');
+        
+        console.log(`🗺️ Directions opened for: ${poi.name}`);
+        console.log(`   Coordinates: ${lat}, ${lng}`);
+        console.log(`   URL: ${url}`);
     }
 
     /**
@@ -751,13 +685,69 @@ Source: Google Places
             // Inicializar Places Service con el mapa
             POIDataModule.initPlacesService(mapInstance);
 
-            // Cargar POIs iniciales (categoría "all")
-            loadPOIsByCategory('all');
+            // Configurar listener para cuando el mapa se mueva y se detenga
+            setupMapLocationListener();
+
+            // Actualizar ubicación inicial
+            updateLocationFromMap();
+
+            // Cargar POIs iniciales (categoría "all") - ya no es necesario mostrar automáticamente
+            // Los usuarios deberán hacer clic en un filtro para ver los POIs en el modal
+            console.log('✅ Map ready - Click on a filter to see places');
 
             console.log('✅ Google Maps initialized successfully');
         } catch (error) {
             console.error('❌ Error initializing map:', error);
             UIController.showNotification('Error loading map. Please refresh the page.', 'error');
+        }
+    }
+
+    /**
+     * Configura el listener para detectar cambios de ubicación en el mapa
+     */
+    function setupMapLocationListener() {
+        // Usar 'idle' para detectar cuando el usuario termina de mover el mapa
+        MapaModule.onMapIdle(async (center, bounds) => {
+            if (center) {
+                console.log('🗺️ Map location changed:', center);
+                await updateLocationFromMap();
+            }
+        });
+    }
+
+    /**
+     * Actualiza la ubicación basándose en el centro del mapa
+     */
+    async function updateLocationFromMap() {
+        try {
+            const center = MapaModule.getMapCenter();
+            if (!center) return;
+
+            // Actualizar la ubicación del usuario en POIDataModule
+            POIDataModule.setUserLocation(center.lat, center.lng);
+
+            // Hacer reverse geocoding para obtener ciudad y país
+            const locationInfo = await MapaModule.reverseGeocode(center.lat, center.lng);
+            
+            if (locationInfo) {
+                // Actualizar el texto del header
+                updateLocationText(locationInfo.city, locationInfo.country);
+                console.log(`📍 Location updated: ${locationInfo.city}, ${locationInfo.country}`);
+            }
+        } catch (error) {
+            console.error('❌ Error updating location from map:', error);
+        }
+    }
+
+    /**
+     * Actualiza el texto de ubicación en el header
+     * @param {string} city - Nombre de la ciudad
+     * @param {string} country - Nombre del país
+     */
+    function updateLocationText(city, country) {
+        const locationText = document.querySelector('.location-text');
+        if (locationText) {
+            locationText.textContent = `${city}, ${country}`;
         }
     }
 
@@ -776,29 +766,39 @@ Source: Google Places
             return;
         }
 
-        favoritesList.innerHTML = favorites.map(fav => `
-            <div class="favorite-card">
-                <div class="poi-header">
-                    <h3 class="poi-title">${fav.name}</h3>
-                    <button class="favorite-btn" onclick="App.removeFavorite('${fav.id}')">
-                        <i class="fas fa-heart"></i>
-                    </button>
-                </div>
-                <p class="poi-description">${fav.description}</p>
-                <div class="poi-details">
-                    <div class="detail-item">
-                        <i class="fas fa-star"></i>
-                        <span>${fav.rating.toFixed(1)}</span>
-                    </div>
-                    ${fav.distance ? `
-                    <div class="detail-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>${POIDataModule.formatDistance(fav.distance)}</span>
-                    </div>
-                    ` : ''}
-                </div>
-            </div>
-        `).join('');
+        // Limpiar el contenedor
+        favoritesList.innerHTML = '';
+
+        // Crear tarjetas usando la misma función del modal pero con vista de favoritos
+        favorites.forEach(fav => {
+            // Obtener el POI completo para tener toda la información actualizada
+            let poi = POIDataModule.getPOIById(fav.id);
+            
+            // Si no se encuentra el POI (puede ser un evento o puede haberse eliminado), 
+            // usar los datos guardados en favoritos
+            if (!poi) {
+                poi = {
+                    id: fav.id,
+                    name: fav.name,
+                    description: fav.description,
+                    category: fav.category,
+                    rating: fav.rating,
+                    coordinates: fav.coordinates,
+                    distance: fav.distance,
+                    photo: fav.photo || null,
+                    image: fav.image || null,
+                    photos: fav.photos || []
+                };
+            }
+            
+            // Crear la tarjeta usando UIController (misma que en el modal)
+            const card = UIController.createPOICard(poi, { isFavoriteView: true });
+            
+            // Agregar la tarjeta al contenedor
+            favoritesList.appendChild(card);
+        });
+        
+        console.log(`📋 Displayed ${favorites.length} favorites`);
     }
 
     /**
@@ -807,8 +807,15 @@ Source: Google Places
      */
     function removeFavorite(id) {
         FavoritesModule.removeFavorite(id);
+        
+        // Actualizar los botones de favorito en toda la página
+        UIController.updateFavoriteButtons(id, false);
+        
+        // Recargar la lista de favoritos
         loadAndDisplayFavorites();
-        UIController.showNotification('Favorite deleted');
+        
+        UIController.showNotification('Removed from favorites', 'success');
+        console.log('❤️ Favorite removed and UI updated:', id);
     }
 
     /**
