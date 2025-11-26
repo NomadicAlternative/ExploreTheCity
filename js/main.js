@@ -37,7 +37,7 @@ const App = (() => {
 
             // 2. Inicializar módulos de datos
             POIDataModule.init();
-            EventsModule.init();
+            await EventsModule.init(); // Esperar a que cargue eventos de Ticketmaster
             FavoritesModule.init();
 
             // 3. Inicializar routing
@@ -134,12 +134,6 @@ const App = (() => {
 
         // === GEOLOCALIZACIÓN ===
         setupGeolocationListeners();
-
-        // === FAVORITOS ===
-        setupFavoriteListeners();
-
-        // === ACCIONES POI ===
-        setupPOIActionListeners();
     }
 
     /**
@@ -213,21 +207,16 @@ const App = (() => {
      * Configura listeners de filtros
      */
     function setupFilterListeners() {
-        // Chips móviles
+        // Chips móviles y desktop (ambos usan .filter-chip)
         const filterChips = document.querySelectorAll('.filter-chip');
         filterChips.forEach(chip => {
-            chip.addEventListener('click', () => {
+            chip.addEventListener('click', async () => {
                 const category = chip.getAttribute('data-category');
-                handleCategoryFilter(category);
-                UIController.updateFilterChips(category);
-            });
-        });
-
-        // Checkboxes desktop
-        const filterCheckboxes = document.querySelectorAll('.filter-checkbox');
-        filterCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', () => {
-                handleCheckboxFilters();
+                await handleCategoryFilter(category);
+                
+                // Actualizar estado activo en ambos grupos de filtros (mobile y desktop)
+                document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+                document.querySelectorAll(`.filter-chip[data-category="${category}"]`).forEach(c => c.classList.add('active'));
             });
         });
     }
@@ -236,22 +225,391 @@ const App = (() => {
      * Maneja filtrado por categoría única
      * @param {string} category - Categoría a filtrar
      */
-    function handleCategoryFilter(category) {
-        const filtered = POIDataModule.filterByCategory(category);
-        updateMapMarkers(filtered);
-        console.log(`Filtered by ${category}:`, filtered.length, 'POIs');
+    async function handleCategoryFilter(category) {
+        console.log(`Filtering by ${category}...`);
+        
+        // Si es eventos, cargar de Ticketmaster y mostrar como POIs
+        if (category === 'events') {
+            loadEventsAsPOIs();
+            return;
+        }
+        
+        // Para otras categorías, cargar desde Google Places
+        await loadPOIsByCategory(category);
     }
 
     /**
-     * Maneja filtrado por múltiples categorías (checkboxes)
+     * Carga POIs por categoría desde Google Places
+     * @param {string} category - Categoría a cargar
      */
-    function handleCheckboxFilters() {
-        const checkboxes = document.querySelectorAll('.filter-checkbox:checked');
-        const categories = Array.from(checkboxes).map(cb => cb.getAttribute('data-category'));
+    async function loadPOIsByCategory(category) {
+        try {
+            UIController.showLoading(true);
+            
+            // Obtener ubicación del usuario
+            const userLoc = POIDataModule.getUserLocation();
+            if (!userLoc) {
+                throw new Error('User location not available');
+            }
+
+            // Fetch POIs desde Google Places
+            const pois = await POIDataModule.fetchPOIsFromGooglePlaces(category, 5000);
+            
+            if (pois.length === 0) {
+                UIController.showNotification(`No places found in ${category} category`, 'info');
+            }
+
+            // Actualizar mapa con marcadores
+            updateMapMarkers(pois);
+            
+            // Mostrar lista de POIs
+            displayPOIsList(pois);
+            
+            UIController.showLoading(false);
+        } catch (error) {
+            console.error('Error loading POIs:', error);
+            UIController.showNotification('Error loading places. Please try again.', 'error');
+            UIController.showLoading(false);
+        }
+    }
+
+    /**
+     * Carga eventos de Ticketmaster y los muestra como tarjetas POI
+     */
+    function loadEventsAsPOIs() {
+        try {
+            UIController.showLoading(true);
+            
+            // Obtener eventos desde Ticketmaster
+            const events = EventsModule.getNearbyEvents();
+            
+            if (events.length === 0) {
+                UIController.showNotification('No events found nearby', 'info');
+                displayPOIsList([]);
+                UIController.showLoading(false);
+                return;
+            }
+
+            // Convertir eventos a formato POI
+            const eventPOIs = events.map(event => convertEventToPOI(event));
+            
+            // Actualizar mapa con marcadores de eventos
+            updateMapMarkers(eventPOIs);
+            
+            // Mostrar eventos como tarjetas POI
+            displayPOIsList(eventPOIs);
+            
+            UIController.showLoading(false);
+            UIController.showNotification(`${events.length} events loaded`, 'success');
+            
+        } catch (error) {
+            console.error('Error loading events:', error);
+            UIController.showNotification('Error loading events. Please try again.', 'error');
+            UIController.showLoading(false);
+        }
+    }
+
+    /**
+     * Convierte un evento a formato POI
+     * @param {Object} event - Evento de Ticketmaster
+     * @returns {Object} - POI formateado
+     */
+    function convertEventToPOI(event) {
+        // Formatear fecha y hora para la descripción
+        const date = EventsModule.formatEventDate(event.date);
+        const time = EventsModule.formatEventTime(event.time);
+        const location = event.location + (event.city ? ', ' + event.city : '');
         
-        const filtered = POIDataModule.filterByCategories(categories);
-        updateMapMarkers(filtered);
-        console.log(`Filtered by [${categories.join(', ')}]:`, filtered.length, 'POIs');
+        // Crear descripción con info del evento
+        const description = `📅 ${date} at ${time} | 📍 ${location}`;
+        
+        // Determinar precio
+        let priceInfo = '';
+        if (event.priceRange) {
+            priceInfo = `${event.priceRange.min}-${event.priceRange.max} ${event.priceRange.currency}`;
+        }
+        
+        return {
+            id: event.id,
+            name: event.name,
+            description: description,
+            category: 'events',
+            rating: 0, // Eventos no tienen rating
+            totalRatings: 0,
+            coordinates: event.coordinates,
+            address: location,
+            distance: event.distance,
+            isOpen: null, // Eventos no tienen horario de apertura
+            priceLevel: priceInfo, // Usar el precio del evento
+            photo: event.image || null,
+            photos: event.image ? [event.image] : [],
+            source: 'ticketmaster',
+            url: event.url, // URL para comprar tickets
+            eventDate: date,
+            eventTime: time
+        };
+    }
+
+    /**
+     * Muestra la lista de POIs en la UI
+     * @param {Array} pois - Array de POIs a mostrar
+     */
+    function displayPOIsList(pois) {
+        const listMobile = document.getElementById('poiListMobile');
+        const listDesktop = document.getElementById('poiListDesktop');
+        
+        if (pois.length === 0) {
+            const emptyMessage = '<p class="empty-message">No places found in this category.</p>';
+            if (listMobile) listMobile.innerHTML = emptyMessage;
+            if (listDesktop) listDesktop.innerHTML = emptyMessage;
+            return;
+        }
+
+        const poisHTML = pois.map(poi => createPOICardHTML(poi)).join('');
+        
+        if (listMobile) listMobile.innerHTML = poisHTML;
+        if (listDesktop) listDesktop.innerHTML = poisHTML;
+        
+        // Agregar event listeners
+        setupPOICardListeners();
+    }
+
+    /**
+     * Crea el HTML de una tarjeta de POI
+     * @param {Object} poi - Datos del POI
+     * @returns {string} - HTML de la tarjeta
+     */
+    function createPOICardHTML(poi) {
+        const isFavorite = FavoritesModule.isFavorite(poi.id);
+        const favoriteIcon = isFavorite ? 'fas' : 'far';
+        const favoriteTitle = isFavorite ? 'Remove from favorites' : 'Add to favorites';
+        const distance = poi.distance ? POIDataModule.formatDistance(poi.distance) : 'N/A';
+        const isEvent = poi.category === 'events';
+        
+        // Para eventos, usar el precio directamente; para POIs, formatearlo
+        const priceLevel = isEvent ? poi.priceLevel : (poi.priceLevel ? POIDataModule.formatPriceLevel(poi.priceLevel) : '');
+        const openStatus = poi.isOpen === true ? 'Open now' : poi.isOpen === false ? 'Closed' : '';
+        
+        return `
+            <div class="poi-card-mobile poi-card-desktop" data-poi-id="${poi.id}" data-category="${poi.category}">
+                ${poi.photo ? `
+                    <div class="poi-image" style="background-image: url('${poi.photo}')"></div>
+                ` : ''}
+                <div class="poi-header">
+                    <h3 class="poi-title">${poi.name}</h3>
+                    <button class="favorite-btn" data-poi-id="${poi.id}" title="${favoriteTitle}" aria-label="${favoriteTitle}">
+                        <i class="${favoriteIcon} fa-heart"></i>
+                    </button>
+                </div>
+                
+                ${!isEvent && poi.rating > 0 ? `
+                <div class="poi-rating">
+                    ${generateStars(poi.rating)}
+                    <span class="rating-text">(${poi.rating.toFixed(1)}${poi.totalRatings ? ` - ${poi.totalRatings} reviews` : ''})</span>
+                </div>
+                ` : ''}
+                
+                <p class="poi-description">${poi.description}</p>
+                
+                <div class="poi-details">
+                    <div class="detail-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>${distance}</span>
+                    </div>
+                    ${openStatus ? `
+                    <div class="detail-item">
+                        <i class="fas fa-clock"></i>
+                        <span class="${poi.isOpen ? 'status-open' : 'status-closed'}">${openStatus}</span>
+                    </div>
+                    ` : ''}
+                    ${priceLevel ? `
+                    <div class="detail-item">
+                        <i class="fas fa-ticket-alt"></i>
+                        <span>${priceLevel}</span>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="poi-actions">
+                    ${isEvent && poi.url ? `
+                    <a href="${poi.url}" target="_blank" class="action-btn event-ticket-btn">
+                        <i class="fas fa-ticket-alt"></i> Get Tickets
+                    </a>
+                    ` : `
+                    <button class="action-btn poi-directions-btn" data-poi-id="${poi.id}">
+                        <i class="fas fa-directions"></i> Directions
+                    </button>
+                    `}
+                    <button class="action-btn poi-info-btn" data-poi-id="${poi.id}">
+                        <i class="fas fa-info-circle"></i> More info
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Genera HTML de estrellas según rating
+     * @param {number} rating - Rating del 0 al 5
+     * @returns {string} - HTML de estrellas
+     */
+    function generateStars(rating) {
+        let starsHTML = '';
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating % 1 >= 0.5;
+
+        for (let i = 0; i < fullStars; i++) {
+            starsHTML += '<i class="fas fa-star"></i>';
+        }
+        if (hasHalfStar) {
+            starsHTML += '<i class="fas fa-star-half-alt"></i>';
+        }
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+        for (let i = 0; i < emptyStars; i++) {
+            starsHTML += '<i class="far fa-star"></i>';
+        }
+
+        return starsHTML;
+    }
+
+    /**
+     * Configura event listeners para las tarjetas de POI
+     */
+    function setupPOICardListeners() {
+        // Click en tarjeta para seleccionar POI
+        document.querySelectorAll('.poi-card-mobile, .poi-card-desktop').forEach(card => {
+            card.addEventListener('click', (e) => {
+                // Evitar si se clickeó un botón
+                if (e.target.closest('button')) return;
+                
+                const poiId = card.getAttribute('data-poi-id');
+                const poi = POIDataModule.getPOIById(poiId);
+                if (poi) {
+                    selectPOI(poi);
+                }
+            });
+        });
+
+        // Click en botón de favorito
+        document.querySelectorAll('.favorite-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const poiId = btn.getAttribute('data-poi-id');
+                togglePOIFavorite(poiId);
+            });
+        });
+
+        // Click en botón de direcciones
+        document.querySelectorAll('.poi-directions-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const poiId = btn.getAttribute('data-poi-id');
+                openPOIDirections(poiId);
+            });
+        });
+
+        // Click en botón de info
+        document.querySelectorAll('.poi-info-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const poiId = btn.getAttribute('data-poi-id');
+                showPOIInfo(poiId);
+            });
+        });
+    }
+
+    /**
+     * Selecciona un POI y centra el mapa
+     * @param {Object} poi - POI a seleccionar
+     */
+    function selectPOI(poi) {
+        POIDataModule.setCurrentPOI(poi);
+        
+        // Centrar mapa en el POI
+        MapaModule.centerMap(poi.coordinates.lat, poi.coordinates.lng, 16);
+        
+        // Highlight en el mapa (opcional)
+        console.log('POI selected:', poi.name);
+        
+        UIController.showNotification(`Selected: ${poi.name}`);
+    }
+
+    /**
+     * Toggle favorito de un POI
+     * @param {string} poiId - ID del POI
+     */
+    function togglePOIFavorite(poiId) {
+        const poi = POIDataModule.getPOIById(poiId);
+        if (!poi) {
+            console.error('POI not found:', poiId);
+            return;
+        }
+        
+        const isFavorite = FavoritesModule.toggleFavorite(poi);
+        console.log('Toggled favorite:', poi.name, 'isFavorite:', isFavorite);
+        
+        // Actualizar TODOS los iconos del botón con este POI ID (mobile y desktop)
+        const buttons = document.querySelectorAll(`.favorite-btn[data-poi-id="${poiId}"]`);
+        console.log('Found buttons to update:', buttons.length);
+        
+        buttons.forEach(btn => {
+            const icon = btn.querySelector('i');
+            if (icon) {
+                icon.className = isFavorite ? 'fas fa-heart' : 'far fa-heart';
+            }
+            const title = isFavorite ? 'Remove from favorites' : 'Add to favorites';
+            btn.setAttribute('title', title);
+            btn.setAttribute('aria-label', title);
+        });
+        
+        const message = isFavorite ? `${poi.name} added to favorites ❤️` : `${poi.name} removed from favorites`;
+        UIController.showNotification(message);
+    }
+
+    /**
+     * Abre direcciones a un POI
+     * @param {string} poiId - ID del POI
+     */
+    function openPOIDirections(poiId) {
+        const poi = POIDataModule.getPOIById(poiId);
+        if (!poi) return;
+        
+        const { lat, lng } = poi.coordinates;
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+        
+        window.open(url, '_blank');
+        UIController.showNotification('Opening Google Maps...');
+    }
+
+    /**
+     * Muestra información detallada de un POI
+     * @param {string} poiId - ID del POI
+     */
+    function showPOIInfo(poiId) {
+        const poi = POIDataModule.getPOIById(poiId);
+        if (!poi) return;
+        
+        const distance = poi.distance ? POIDataModule.formatDistance(poi.distance) : 'N/A';
+        const priceLevel = poi.priceLevel ? POIDataModule.formatPriceLevel(poi.priceLevel) : 'N/A';
+        const openStatus = poi.isOpen === true ? 'Open now ✅' : poi.isOpen === false ? 'Closed ❌' : 'Hours not available';
+        
+        const info = `
+${poi.name}
+
+⭐ Rating: ${poi.rating.toFixed(1)}/5.0${poi.totalRatings ? ` (${poi.totalRatings} reviews)` : ''}
+📍 Distance: ${distance}
+💰 Price: ${priceLevel}
+🕐 Status: ${openStatus}
+
+📮 Address:
+${poi.address}
+
+${poi.description}
+
+Source: Google Places
+        `.trim();
+        
+        alert(info);
     }
 
     /**
@@ -324,99 +682,6 @@ const App = (() => {
     }
 
     /**
-     * Configura listeners de favoritos
-     */
-    function setupFavoriteListeners() {
-        const favoriteBtnMobile = document.getElementById('favoriteBtnMobile');
-        const favoritesBtnDesktop = document.getElementById('favoritesBtnDesktop');
-
-        if (favoriteBtnMobile) {
-            favoriteBtnMobile.addEventListener('click', () => toggleCurrentFavorite());
-        }
-
-        if (favoritesBtnDesktop) {
-            favoritesBtnDesktop.addEventListener('click', () => toggleCurrentFavorite());
-        }
-    }
-
-    /**
-     * Alterna favorito del POI actual
-     */
-    function toggleCurrentFavorite() {
-        const currentPOI = POIDataModule.getCurrentPOI();
-        
-        if (!currentPOI) {
-            UIController.showNotification('No POI selected', 'error');
-            return;
-        }
-
-        const isFavorite = FavoritesModule.toggleFavorite(currentPOI);
-        
-        if (isFavorite) {
-            UIController.showNotification('Added to favorites ❤️');
-        } else {
-            UIController.showNotification('Removed from favorites');
-        }
-
-        updateFavoriteUI();
-    }
-
-    /**
-     * Actualiza la UI de favoritos
-     */
-    function updateFavoriteUI() {
-        const currentPOI = POIDataModule.getCurrentPOI();
-        
-        if (currentPOI) {
-            const isFavorite = FavoritesModule.isFavorite(currentPOI.id);
-            UIController.updateFavoriteButton(isFavorite);
-        }
-    }
-
-    /**
-     * Configura listeners de acciones de POI
-     */
-    function setupPOIActionListeners() {
-        const directionsBtnMobile = document.getElementById('directionsBtnMobile');
-        const moreInfoBtnMobile = document.getElementById('moreInfoBtnMobile');
-
-        if (directionsBtnMobile) {
-            directionsBtnMobile.addEventListener('click', openDirections);
-        }
-
-        if (moreInfoBtnMobile) {
-            moreInfoBtnMobile.addEventListener('click', showMoreInfo);
-        }
-    }
-
-    /**
-     * Abre direcciones en Google Maps
-     */
-    function openDirections() {
-        const currentPOI = POIDataModule.getCurrentPOI();
-        
-        if (!currentPOI) return;
-
-        const { lat, lng } = currentPOI.coordinates;
-        const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-        
-        window.open(url, '_blank');
-        UIController.showNotification('Opening Google Maps...');
-    }
-
-    /**
-     * Muestra más información del POI
-     */
-    function showMoreInfo() {
-        const currentPOI = POIDataModule.getCurrentPOI();
-        
-        if (!currentPOI) return;
-
-        // TODO: Implementar modal con información detallada
-        alert(`More information about: ${currentPOI.name}\n\n${currentPOI.description}\n\nAddress: ${currentPOI.address}\nPhone: ${currentPOI.phone || 'N/A'}\nHours: ${currentPOI.hours}`);
-    }
-
-    /**
      * Actualiza los marcadores en el mapa
      * @param {Array} pois - Array de POIs
      */
@@ -457,9 +722,7 @@ const App = (() => {
      */
     function handleMarkerClick(poi) {
         console.log('Marker clicked:', poi.name);
-        POIDataModule.setCurrentPOI(poi);
-        UIController.updatePOICard(poi);
-        updateFavoriteUI();
+        selectPOI(poi);
     }
 
     /**
@@ -485,16 +748,11 @@ const App = (() => {
                 throw new Error('Failed to initialize map');
             }
 
-            // Cargar POIs iniciales
-            const pois = POIDataModule.getAllPOIs();
-            updateMapMarkers(pois);
+            // Inicializar Places Service con el mapa
+            POIDataModule.initPlacesService(mapInstance);
 
-            // Establecer primer POI como actual
-            if (pois.length > 0) {
-                POIDataModule.setCurrentPOI(pois[0]);
-                UIController.updatePOICard(pois[0]);
-                updateFavoriteUI();
-            }
+            // Cargar POIs iniciales (categoría "all")
+            loadPOIsByCategory('all');
 
             console.log('✅ Google Maps initialized successfully');
         } catch (error) {
@@ -561,33 +819,116 @@ const App = (() => {
         
         if (!eventsList) return;
 
-        const events = EventsModule.getUpcomingEvents();
+        // Mostrar loading
+        eventsList.innerHTML = '<p class="loading-message"><i class="fas fa-spinner fa-spin"></i> Cargando eventos...</p>';
+
+        // Obtener eventos cercanos (sin límite de distancia)
+        const events = EventsModule.getNearbyEvents();
 
         if (events.length === 0) {
-            eventsList.innerHTML = '<p class="empty-message">No upcoming events at this time.</p>';
+            eventsList.innerHTML = '<p class="empty-message">No hay eventos disponibles en este momento.</p>';
             return;
         }
 
-        eventsList.innerHTML = events.map(event => `
-            <div class="event-card">
-                <h3 class="poi-title">${event.name}</h3>
-                <div class="poi-details">
-                    <div class="detail-item">
-                        <i class="fas fa-calendar"></i>
-                        <span>${EventsModule.formatEventDate(event.date)}</span>
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-clock"></i>
-                        <span>${event.time}</span>
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>${event.location}</span>
+        eventsList.innerHTML = events.map(event => {
+            const status = EventsModule.getEventStatus(event.date);
+            const statusText = EventsModule.getStatusText(status);
+            const distance = event.distance ? EventsModule.formatDistance(event.distance) : 'N/A';
+            const price = event.priceRange ? 
+                `${event.priceRange.min}-${event.priceRange.max} ${event.priceRange.currency}` : 
+                'Ver precios';
+            const image = event.image || 'images/event-placeholder.jpg';
+
+            return `
+                <div class="event-card" data-event-id="${event.id}">
+                    ${event.image ? `
+                        <div class="event-image" style="background-image: url('${image}')"></div>
+                    ` : ''}
+                    <div class="event-content">
+                        <div class="event-header">
+                            <span class="event-status status-${status}">${statusText}</span>
+                            ${event.distance ? `<span class="event-distance"><i class="fas fa-map-marker-alt"></i> ${distance}</span>` : ''}
+                        </div>
+                        <h3 class="poi-title">${event.name}</h3>
+                        <p class="poi-description">${event.description}</p>
+                        <div class="poi-details">
+                            <div class="detail-item">
+                                <i class="fas fa-calendar"></i>
+                                <span>${EventsModule.formatEventDate(event.date)}</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-clock"></i>
+                                <span>${EventsModule.formatEventTime(event.time)}</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>${event.location}${event.city ? ', ' + event.city : ''}</span>
+                            </div>
+                            ${event.priceRange ? `
+                            <div class="detail-item">
+                                <i class="fas fa-ticket-alt"></i>
+                                <span>${price}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                        ${event.url ? `
+                        <a href="${event.url}" target="_blank" class="event-link-btn">
+                            <i class="fas fa-external-link-alt"></i> Ver Tickets
+                        </a>
+                        ` : ''}
                     </div>
                 </div>
-                <p class="poi-description">${event.description}</p>
-            </div>
-        `).join('');
+            `;
+        }).join('');
+
+        // Agregar event listeners a las tarjetas
+        document.querySelectorAll('.event-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                // No hacer nada si se clickeó el botón de tickets
+                if (e.target.closest('.event-link-btn')) return;
+                
+                const eventId = card.getAttribute('data-event-id');
+                const event = EventsModule.getEventById(eventId);
+                if (event) {
+                    showEventDetail(event);
+                }
+            });
+        });
+    }
+
+    /**
+     * Muestra el detalle de un evento
+     * @param {Object} event - Evento a mostrar
+     */
+    function showEventDetail(event) {
+        const distance = event.distance ? EventsModule.formatDistance(event.distance) : 'N/A';
+        const price = event.priceRange ? 
+            `Precio: ${event.priceRange.min}-${event.priceRange.max} ${event.priceRange.currency}` : 
+            'Precios disponibles en el sitio web';
+        
+        const info = `
+${event.name}
+
+📅 Fecha: ${EventsModule.formatEventDate(event.date)}
+🕐 Hora: ${EventsModule.formatEventTime(event.time)}
+📍 Lugar: ${event.location}${event.city ? ', ' + event.city : ''}
+${event.distance ? `🗺️ Distancia: ${distance}` : ''}
+${event.venue?.address ? `📮 Dirección: ${event.venue.address}` : ''}
+💰 ${price}
+
+${event.description}
+
+${event.organizer ? `Organiza: ${event.organizer}` : ''}
+${event.genre ? `Género: ${event.genre}` : ''}
+
+${event.url ? '¿Deseas comprar tickets?' : ''}
+        `.trim();
+        
+        if (event.url && confirm(info)) {
+            window.open(event.url, '_blank');
+        } else if (!event.url) {
+            alert(info);
+        }
     }
 
     /**

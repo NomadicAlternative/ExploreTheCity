@@ -106,7 +106,7 @@
                 <i class="fas fa-landmark"></i> Historical
             </button>
             <button class="filter-chip" data-category="restaurants">
-                <i class="fas fa-utensils"></i> <span class="filter-text-full">Restaurants</span><span class="filter-text-short">Food</span>
+                <i class="fas fa-utensils"></i> Restaurants
             </button>
             <button class="filter-chip" data-category="nature">
                 <i class="fas fa-tree"></i> Nature
@@ -116,10 +116,29 @@
             </button>
         </section>
 
-        <!-- Layout Desktop: Dos Columnas -->
+        <!-- Layout Desktop: Una Columna con Filtros Visibles -->
         <div class="desktop-layout">
-            <!-- Columna Izquierda: Búsqueda + Mapa -->
-            <section class="left-column">
+            <!-- Sección de Filtros Rápidos Desktop (similar a mobile) -->
+            <section class="quick-filters-desktop" id="quickFiltersDesktop">
+                <button class="filter-chip active" data-category="all">
+                    <i class="fas fa-globe"></i> All
+                </button>
+                <button class="filter-chip" data-category="historical">
+                    <i class="fas fa-landmark"></i> Historical
+                </button>
+                <button class="filter-chip" data-category="restaurants">
+                    <i class="fas fa-utensils"></i> Restaurants
+                </button>
+                <button class="filter-chip" data-category="nature">
+                    <i class="fas fa-tree"></i> Nature
+                </button>
+                <button class="filter-chip" data-category="events">
+                    <i class="fas fa-calendar"></i> Events
+                </button>
+            </section>
+
+            <!-- Columna Principal: Mapa + Lista de POIs -->
+            <section class="main-column">
                 <!-- Búsqueda Desktop -->
                 <div class="search-container-desktop">
                     <i class="fas fa-search search-icon"></i>
@@ -138,100 +157,18 @@
                     </button>
                 </div>
 
-                <!-- Tarjeta POI debajo del mapa (solo móvil) -->
-                <div class="poi-card-mobile" id="poiCardMobile">
-                    <div class="poi-header">
-                        <h2 class="poi-title">Historical Place</h2>
-                        <button class="favorite-btn" id="favoriteBtnMobile" aria-label="Add to favorites">
-                            <i class="far fa-heart"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="poi-rating">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="far fa-star"></i>
-                        <span class="rating-text">(4.0)</span>
-                    </div>
-                    
-                    <p class="poi-description">An interesting historical place</p>
-                    
-                    <div class="poi-details">
-                        <div class="detail-item">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>0.5 km away</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-clock"></i>
-                            <span>Open now</span>
-                        </div>
-                    </div>
-                    
-                    <button class="favorites-btn-main">
-                        Favorites
-                    </button>
-                    
-                    <div class="poi-actions">
-                        <button class="action-btn" id="directionsBtnMobile">
-                            <i class="fas fa-directions"></i> Directions
-                        </button>
-                        <button class="action-btn" id="moreInfoBtnMobile">
-                            <i class="fas fa-info-circle"></i> More info
-                        </button>
-                    </div>
+                <!-- Lista de POIs debajo del mapa (mobile) -->
+                <div class="poi-list-mobile" id="poiListMobile">
+                    <!-- Los POIs se cargarán dinámicamente aquí -->
+                    <p class="empty-message">Select a category to explore places</p>
+                </div>
+
+                <!-- Lista de POIs Desktop -->
+                <div class="poi-list-desktop" id="poiListDesktop">
+                    <!-- Los POIs se cargarán dinámicamente aquí -->
+                    <p class="empty-message">Select a category to explore places</p>
                 </div>
             </section>
-
-            <!-- Columna Derecha: Filtros + Info POI (Desktop) -->
-            <aside class="right-column">
-                <!-- Panel de Filtros -->
-                <div class="filters-panel">
-                    <h2 class="filters-title">Filters</h2>
-                    
-                    <div class="filter-group">
-                        <label class="filter-option">
-                            <input type="checkbox" class="filter-checkbox" data-category="historical" checked>
-                            <span class="filter-color historical-color"></span>
-                            <span class="filter-label">Historical places</span>
-                        </label>
-                        
-                        <label class="filter-option">
-                            <input type="checkbox" class="filter-checkbox" data-category="nature">
-                            <span class="filter-color nature-color"></span>
-                            <span class="filter-label">Mountain routes</span>
-                        </label>
-                        
-                        <label class="filter-option">
-                            <input type="checkbox" class="filter-checkbox" data-category="restaurants">
-                            <span class="filter-color restaurants-color"></span>
-                            <span class="filter-label">Restaurants</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Tarjeta POI Desktop -->
-                <div class="poi-card-desktop" id="poiCardDesktop">
-                    <div class="poi-tag">Tex</div>
-                    
-                    <h2 class="poi-title-desktop">Historical Place</h2>
-                    
-                    <div class="poi-rating-desktop">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="far fa-star"></i>
-                    </div>
-                    
-                    <p class="poi-description-desktop">An interesting historical place</p>
-                    
-                    <button class="favorites-btn-desktop" id="favoritesBtnDesktop">
-                        Favorites
-                    </button>
-                </div>
-            </aside>
         </div>
 
         <!-- Sección de Favoritos (oculta inicialmente) -->
