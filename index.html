@@ -4,10 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Explore tourist and local places in Petrer">
+    <meta name="theme-color" content="#1d3557">
     <title>Explore the City - Petrer</title>
     
-    <!-- Favicon -->
-    <link rel="icon" type="image/webp" href="images/logo.webp">
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="shortcut icon" href="favicon.ico">
     
     <!-- Google Fonts - Roboto -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -61,11 +66,6 @@
                 <img src="images/logo.webp" alt="Explore The City Logo" class="logo-img-mobile">
                 <span class="location-text">Loading location...</span>
             </div>
-            <button class="hamburger" id="hamburger" aria-label="Menú de navegación">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </button>
         </div>
         <div class="search-container">
             <i class="fas fa-search search-icon"></i>
@@ -73,26 +73,29 @@
         </div>
     </nav>
 
-    <!-- Menú Lateral Mobile -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h2>Menu</h2>
-            <button class="close-btn" id="closeBtn" aria-label="Close menu">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <ul class="sidebar-menu">
-            <li><a href="#home" class="menu-link active"><i class="fas fa-home"></i> Home</a></li>
-            <li><a href="#favorites" class="menu-link"><i class="fas fa-heart"></i> Favorites</a></li>
-            <li><a href="#events" class="menu-link"><i class="fas fa-calendar-alt"></i> Events</a></li>
-            <li><a href="#routes" class="menu-link"><i class="fas fa-route"></i> Routes</a></li>
-            <li><a href="#about" class="menu-link"><i class="fas fa-info-circle"></i> About</a></li>
-            <li><a href="#contact" class="menu-link"><i class="fas fa-phone"></i> Contact</a></li>
-        </ul>
-    </aside>
-
-    <!-- Overlay para cerrar menú -->
-    <div class="overlay" id="overlay"></div>
+    <!-- Bottom Navigation Bar (Mobile) -->
+    <nav class="bottom-nav" id="bottomNav">
+        <a href="#home" class="bottom-nav-item active" data-page="home">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="#favorites" class="bottom-nav-item" data-page="favorites">
+            <i class="fas fa-heart"></i>
+            <span>Favorites</span>
+        </a>
+        <a href="#events" class="bottom-nav-item" data-page="events">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Events</span>
+        </a>
+        <a href="#routes" class="bottom-nav-item" data-page="routes">
+            <i class="fas fa-route"></i>
+            <span>Routes</span>
+        </a>
+        <a href="#about" class="bottom-nav-item" data-page="about">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
 
     <!-- Modal Fullscreen para POIs -->
     <div class="poi-modal" id="poiModal">
@@ -119,20 +122,25 @@
 
         <!-- Sección de Filtros Rápidos Mobile -->
         <section class="quick-filters-mobile" id="quickFiltersMobile">
-            <a href="#favorites" class="filter-chip">
-                <i class="fas fa-heart"></i> Favorites
+            <a href="#favorites" class="filter-chip" data-count="">
+                <i class="fas fa-heart"></i>
+                <span>Favorites</span>
             </a>
-            <button class="filter-chip" data-category="historical">
-                <i class="fas fa-landmark"></i> Historical
+            <button class="filter-chip" data-category="historical" data-count="">
+                <i class="fas fa-landmark"></i>
+                <span>Historical</span>
             </button>
-            <button class="filter-chip" data-category="restaurants">
-                <i class="fas fa-utensils"></i> Restaurants
+            <button class="filter-chip" data-category="restaurants" data-count="">
+                <i class="fas fa-utensils"></i>
+                <span>Restaurants</span>
             </button>
-            <button class="filter-chip" data-category="nature">
-                <i class="fas fa-tree"></i> Nature
+            <button class="filter-chip" data-category="nature" data-count="">
+                <i class="fas fa-tree"></i>
+                <span>Nature</span>
             </button>
-            <button class="filter-chip" data-category="events">
-                <i class="fas fa-calendar"></i> Events
+            <button class="filter-chip" data-category="events" data-count="">
+                <i class="fas fa-calendar"></i>
+                <span>Events</span>
             </button>
         </section>
 
@@ -140,20 +148,25 @@
         <div class="desktop-layout">
             <!-- Sección de Filtros Rápidos Desktop (similar a mobile) -->
             <section class="quick-filters-desktop" id="quickFiltersDesktop">
-                <a href="#favorites" class="filter-chip">
-                    <i class="fas fa-heart"></i> Favorites
+                <a href="#favorites" class="filter-chip" data-count="">
+                    <i class="fas fa-heart"></i>
+                    <span>Favorites</span>
                 </a>
-                <button class="filter-chip" data-category="historical">
-                    <i class="fas fa-landmark"></i> Historical
+                <button class="filter-chip" data-category="historical" data-count="">
+                    <i class="fas fa-landmark"></i>
+                    <span>Historical</span>
                 </button>
-                <button class="filter-chip" data-category="restaurants">
-                    <i class="fas fa-utensils"></i> Restaurants
+                <button class="filter-chip" data-category="restaurants" data-count="">
+                    <i class="fas fa-utensils"></i>
+                    <span>Restaurants</span>
                 </button>
-                <button class="filter-chip" data-category="nature">
-                    <i class="fas fa-tree"></i> Nature
+                <button class="filter-chip" data-category="nature" data-count="">
+                    <i class="fas fa-tree"></i>
+                    <span>Nature</span>
                 </button>
-                <button class="filter-chip" data-category="events">
-                    <i class="fas fa-calendar"></i> Events
+                <button class="filter-chip" data-category="events" data-count="">
+                    <i class="fas fa-calendar"></i>
+                    <span>Events</span>
                 </button>
             </section>
 

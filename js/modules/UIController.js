@@ -31,12 +31,9 @@ export const UIController = (() => {
      */
     function cacheElements() {
         elements = {
-            // Mobile
-            hamburger: document.getElementById('hamburger'),
-            sidebar: document.getElementById('sidebar'),
-            overlay: document.getElementById('overlay'),
-            closeBtn: document.getElementById('closeBtn'),
-            menuLinks: document.querySelectorAll('.menu-link'),
+            // Mobile - Bottom Navigation
+            bottomNav: document.getElementById('bottomNav'),
+            bottomNavItems: document.querySelectorAll('.bottom-nav-item'),
             searchInput: document.getElementById('searchInput'),
             filterChipsMobile: document.querySelectorAll('.filter-chip'),
             favoriteBtnMobile: document.getElementById('favoriteBtnMobile'),
@@ -80,15 +77,11 @@ export const UIController = (() => {
      * Configura event listeners básicos de UI
      */
     function setupEventListeners() {
-        // Menú hamburguesa
-        if (elements.hamburger) {
-            elements.hamburger.addEventListener('click', openSidebar);
-        }
-        if (elements.closeBtn) {
-            elements.closeBtn.addEventListener('click', closeSidebar);
-        }
-        if (elements.overlay) {
-            elements.overlay.addEventListener('click', closeSidebar);
+        // Bottom Navigation
+        if (elements.bottomNavItems) {
+            elements.bottomNavItems.forEach(item => {
+                item.addEventListener('click', handleBottomNavClick);
+            });
         }
 
         // Modal POI
@@ -116,29 +109,19 @@ export const UIController = (() => {
     }
 
     /**
-     * Abre el sidebar móvil
+     * Maneja el click en los items del bottom navigation
+     * @param {Event} e - Evento de click
      */
-    function openSidebar() {
-        if (elements.sidebar) {
-            elements.sidebar.classList.add('active');
-        }
-        if (elements.overlay) {
-            elements.overlay.classList.add('active');
-        }
-        document.body.style.overflow = 'hidden';
-    }
+    function handleBottomNavClick(e) {
+        const clickedItem = e.currentTarget;
+        const page = clickedItem.dataset.page;
 
-    /**
-     * Cierra el sidebar móvil
-     */
-    function closeSidebar() {
-        if (elements.sidebar) {
-            elements.sidebar.classList.remove('active');
-        }
-        if (elements.overlay) {
-            elements.overlay.classList.remove('active');
-        }
-        document.body.style.overflow = 'auto';
+        // Actualizar estado activo
+        elements.bottomNavItems.forEach(item => item.classList.remove('active'));
+        clickedItem.classList.add('active');
+
+        // No hacer nada más, el routing se encarga del resto
+        console.log(`Bottom nav clicked: ${page}`);
     }
 
     /**
@@ -559,7 +542,7 @@ export const UIController = (() => {
     }
 
     /**
-     * Toggle favorito de un POI
+     * Toggle favorito de un POI con microinteracciones (UI/UX Enhancement)
      * @param {Object} poi - Objeto completo del POI
      */
     function toggleFavorite(poi) {
@@ -581,6 +564,23 @@ export const UIController = (() => {
         // Actualizar TODOS los botones de favoritos con este POI ID
         updateFavoriteButtons(poi.id, isFavorite);
         
+        // Agregar microinteracciones solo cuando se AGREGA a favoritos
+        if (isFavorite) {
+            const buttons = document.querySelectorAll(`.favorite-btn[data-poi-id="${poi.id}"]`);
+            buttons.forEach(btn => {
+                // Agregar clase de animación
+                btn.classList.add('adding');
+                
+                // Crear partículas
+                createFavoriteParticles(btn);
+                
+                // Remover clase después de la animación
+                setTimeout(() => {
+                    btn.classList.remove('adding');
+                }, 600);
+            });
+        }
+        
         // Notificación
         const message = isFavorite 
             ? `${poi.name} added to favorites ❤️` 
@@ -588,6 +588,46 @@ export const UIController = (() => {
         showNotification(message, 'success');
         
         console.log(`❤️ Favorite toggled: ${poi.name} - isFavorite: ${isFavorite}`);
+    }
+
+    /**
+     * Crea partículas animadas de corazón (Microinteracción)
+     * @param {HTMLElement} button - Botón de favoritos
+     */
+    function createFavoriteParticles(button) {
+        const rect = button.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        // Crear contenedor de partículas
+        const container = document.createElement('div');
+        container.className = 'favorite-particles';
+        container.style.left = `${centerX}px`;
+        container.style.top = `${centerY}px`;
+        document.body.appendChild(container);
+        
+        // Crear 8 partículas
+        const particleCount = 8;
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('i');
+            particle.className = 'fas fa-heart favorite-particle';
+            
+            // Calcular dirección aleatoria
+            const angle = (Math.PI * 2 * i) / particleCount;
+            const distance = 50 + Math.random() * 30;
+            const tx = Math.cos(angle) * distance;
+            const ty = Math.sin(angle) * distance;
+            
+            particle.style.setProperty('--tx', `${tx}px`);
+            particle.style.setProperty('--ty', `${ty}px`);
+            
+            container.appendChild(particle);
+        }
+        
+        // Remover contenedor después de la animación
+        setTimeout(() => {
+            container.remove();
+        }, 1000);
     }
 
     /**
@@ -934,47 +974,69 @@ export const UIController = (() => {
     }
 
     /**
-     * Muestra una notificación temporal
+     * Muestra una notificación toast moderna (UI/UX Enhancement)
      * @param {string} message - Mensaje a mostrar
-     * @param {string} type - Tipo de notificación ('success', 'error', 'info')
+     * @param {string} type - Tipo de notificación ('success', 'error', 'info', 'warning')
      * @param {number} duration - Duración en ms
      */
     function showNotification(message, type = 'success', duration = 3000) {
-        const colors = {
-            success: '#3D5A80',
-            error: '#EE6C4D',
-            info: '#98C1D9',
-            warning: '#F4A261'
+        // Crear contenedor si no existe
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        // Iconos según tipo
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
         };
 
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: ${colors[type] || colors.success};
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 10000;
-            animation: slideUp 0.3s ease;
-            max-width: 90%;
-            text-align: center;
+        // Crear toast
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <i class="fas ${icons[type] || icons.info} toast-icon"></i>
+            <div class="toast-content">
+                <p class="toast-message">${message}</p>
+            </div>
+            <button class="toast-close" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
         `;
-        notification.textContent = message;
-        
-        document.body.appendChild(notification);
-        
+
+        // Agregar al contenedor
+        container.appendChild(toast);
+
+        // Botón de cerrar
+        const closeBtn = toast.querySelector('.toast-close');
+        closeBtn.addEventListener('click', () => {
+            removeToast(toast);
+        });
+
+        // Auto-remover después de duration
         setTimeout(() => {
-            notification.style.animation = 'slideDown 0.3s ease';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    document.body.removeChild(notification);
-                }
-            }, 300);
+            removeToast(toast);
         }, duration);
+    }
+
+    /**
+     * Remueve un toast con animación
+     * @param {HTMLElement} toast - Elemento toast a remover
+     */
+    function removeToast(toast) {
+        if (!toast || !toast.parentNode) return;
+        
+        toast.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
     }
 
     /**
@@ -1061,12 +1123,71 @@ export const UIController = (() => {
         console.log('✅ FavoritesModule set in UIController');
     }
 
+    /**
+     * Muestra loading skeletons en un contenedor (UI/UX Enhancement)
+     * @param {HTMLElement} container - Contenedor donde mostrar los skeletons
+     * @param {number} count - Número de skeletons a mostrar
+     */
+    function showLoadingSkeletons(container, count = 3) {
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        for (let i = 0; i < count; i++) {
+            const skeleton = document.createElement('div');
+            skeleton.className = 'skeleton-card';
+            skeleton.innerHTML = `
+                <div class="skeleton skeleton-image"></div>
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text short"></div>
+                <div class="skeleton skeleton-button"></div>
+            `;
+            container.appendChild(skeleton);
+        }
+    }
+
+    /**
+     * Muestra un estado vacío en un contenedor (UI/UX Enhancement)
+     * @param {HTMLElement} container - Contenedor donde mostrar el estado vacío
+     * @param {Object} options - Opciones de configuración
+     */
+    function showEmptyState(container, options = {}) {
+        if (!container) return;
+        
+        const defaults = {
+            icon: 'fa-inbox',
+            title: 'No results found',
+            message: 'Try adjusting your filters or search terms',
+            buttonText: null,
+            buttonAction: null
+        };
+        
+        const config = { ...defaults, ...options };
+        
+        const emptyState = document.createElement('div');
+        emptyState.className = 'empty-state';
+        emptyState.innerHTML = `
+            <i class="fas ${config.icon} empty-state-icon"></i>
+            <h3 class="empty-state-title">${config.title}</h3>
+            <p class="empty-state-message">${config.message}</p>
+            ${config.buttonText ? `<button class="empty-state-button">${config.buttonText}</button>` : ''}
+        `;
+        
+        container.innerHTML = '';
+        container.appendChild(emptyState);
+        
+        // Agregar listener al botón si existe
+        if (config.buttonText && config.buttonAction) {
+            const button = emptyState.querySelector('.empty-state-button');
+            button.addEventListener('click', config.buttonAction);
+        }
+    }
+
     // API pública del módulo
     return {
         init,
         showView,
-        openSidebar,
-        closeSidebar,
         openPOIModal,
         closePOIModal,
         updateFavoriteButton,
@@ -1084,6 +1205,8 @@ export const UIController = (() => {
         toggleFavorite,           // Agregar función de toggle favoritos
         updateFavoriteButtons,    // Agregar función de actualización de botones
         checkIfFavorite,          // Agregar función de verificación
-        createPOICard             // Exponer función para crear tarjetas
+        createPOICard,            // Exponer función para crear tarjetas
+        showLoadingSkeletons,     // UI/UX: Loading states
+        showEmptyState            // UI/UX: Empty states
     };
 })();

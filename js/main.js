@@ -106,25 +106,30 @@ const App = (() => {
         // Integración Routing + UI
         RoutingModule.onRoute('home', () => {
             UIController.showView('home');
+            updateBottomNavActive('home');
         });
 
         RoutingModule.onRoute('favorites', () => {
             UIController.showView('favorites');
             loadAndDisplayFavorites();
+            updateBottomNavActive('favorites');
         });
 
         RoutingModule.onRoute('events', () => {
             UIController.showView('events');
             loadAndDisplayEvents();
+            updateBottomNavActive('events');
         });
 
         RoutingModule.onRoute('routes', () => {
             UIController.showView('routes');
             loadAndDisplayRoutes();
+            updateBottomNavActive('routes');
         });
 
         RoutingModule.onRoute('about', () => {
             showAboutModal();
+            updateBottomNavActive('about');
         });
 
         RoutingModule.onRoute('contact', () => {
@@ -161,14 +166,13 @@ const App = (() => {
      * Configura listeners de navegación
      */
     function setupNavigationListeners() {
-        // Enlaces del menú móvil
-        const menuLinks = document.querySelectorAll('.menu-link');
-        menuLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
+        // Enlaces del bottom navigation
+        const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
+        bottomNavItems.forEach(item => {
+            item.addEventListener('click', (e) => {
                 e.preventDefault();
-                const target = link.getAttribute('href').substring(1);
+                const target = item.getAttribute('href').substring(1);
                 RoutingModule.navigateTo(target);
-                UIController.closeSidebar();
             });
         });
 
@@ -189,6 +193,22 @@ const App = (() => {
                 e.preventDefault();
                 RoutingModule.navigateTo('favorites');
             });
+        });
+    }
+
+    /**
+     * Actualiza el estado activo del bottom navigation
+     * @param {string} page - Nombre de la página activa
+     */
+    function updateBottomNavActive(page) {
+        const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
+        bottomNavItems.forEach(item => {
+            const itemPage = item.dataset.page;
+            if (itemPage === page) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
         });
     }
 
@@ -236,11 +256,19 @@ const App = (() => {
     /**
      * Configura listeners de filtros
      */
+    /**
+     * Configura listeners de filtros (click y hover preview)
+     */
     function setupFilterListeners() {
         // Chips móviles y desktop (ambos usan .filter-chip)
         // Excluir el enlace de favoritos que usa href
         const filterChips = document.querySelectorAll('.filter-chip[data-category]');
+        
+        // Variable para rastrear si estamos en desktop
+        const isDesktop = window.innerWidth >= 1024;
+        
         filterChips.forEach(chip => {
+            // Click handler (funciona en mobile y desktop)
             chip.addEventListener('click', async () => {
                 const category = chip.getAttribute('data-category');
                 await handleCategoryFilter(category);
@@ -249,7 +277,68 @@ const App = (() => {
                 document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
                 document.querySelectorAll(`.filter-chip[data-category="${category}"]`).forEach(c => c.classList.add('active'));
             });
+            
+            // Hover preview (solo en desktop)
+            if (isDesktop) {
+                chip.addEventListener('mouseenter', async () => {
+                    const category = chip.getAttribute('data-category');
+                    await previewCategoryOnMap(category);
+                });
+                
+                chip.addEventListener('mouseleave', () => {
+                    restoreMapMarkers();
+                });
+            }
         });
+    }
+    
+    /**
+     * Vista previa de categoría en el mapa (hover effect)
+     * @param {string} category - Categoría a previsualizar
+     */
+    async function previewCategoryOnMap(category) {
+        try {
+            // Obtener ubicación del usuario
+            const userLoc = POIDataModule.getUserLocation();
+            if (!userLoc) {
+                console.warn('User location not available for preview');
+                return;
+            }
+            
+            // Fetch POIs de esa categoría
+            let pois;
+            if (category === 'events') {
+                // Para eventos, usar Ticketmaster
+                const ticketmasterEvents = await TicketmasterModule.getEvents({
+                    latitude: userLoc.lat,
+                    longitude: userLoc.lng,
+                    radius: 30,
+                    size: 20
+                });
+                pois = ticketmasterEvents.map(event => EventsModule.eventToPOI(event));
+            } else {
+                // Para otras categorías, usar Google Places
+                pois = await POIDataModule.fetchPOIsFromGooglePlaces(category, 5000);
+            }
+            
+            // Actualizar mapa solo con esos POIs (preview)
+            if (pois && pois.length > 0) {
+                updateMapMarkers(pois);
+            }
+        } catch (error) {
+            console.error('Error in preview:', error);
+        }
+    }
+    
+    /**
+     * Restaura todos los marcadores en el mapa
+     */
+    function restoreMapMarkers() {
+        // Obtener todos los POIs cargados
+        const allPOIs = POIDataModule.getAllPOIs();
+        if (allPOIs && allPOIs.length > 0) {
+            updateMapMarkers(allPOIs);
+        }
     }
 
     /**
