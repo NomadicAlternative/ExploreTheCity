@@ -20,7 +20,7 @@ export const POIDataModule = (() => {
 
     // Radio de búsqueda por categoría (en metros)
     const SEARCH_RADIUS = {
-        'historical': 5000,      // 5 km para lugares históricos
+        'historical': 10000,     // 10 km para lugares históricos (como Google Maps)
         'restaurants': 3000,     // 3 km para restaurantes
         'nature': 10000,         // 10 km para naturaleza (lugares más alejados)
         'default': 5000          // 5 km por defecto
@@ -153,6 +153,11 @@ export const POIDataModule = (() => {
         // Para NATURE: usar búsqueda de texto principal
         if (category === 'nature') {
             return searchNaturePlaces(location, radius);
+        }
+        
+        // Para HISTORICAL: usar búsqueda de texto como Google Maps
+        if (category === 'historical') {
+            return searchHistoricalPlaces(location, radius);
         }
         
         // Para otras categorías: búsqueda normal por tipos
@@ -329,7 +334,179 @@ export const POIDataModule = (() => {
     }
 
     /**
-     * Fallback para búsqueda de naturaleza si textSearch falla
+     * Búsqueda especializada para sitios históricos
+     * Usa Text Search con query "sitios históricos cerca de mí" como Google Maps
+     * @param {Object} location - Google Maps LatLng
+     * @param {number} radius - Radio en metros
+     * @returns {Promise<Array>} - Array de POIs
+     */
+    function searchHistoricalPlaces(location, radius) {
+        return new Promise((resolve, reject) => {
+            console.log('🏛️ Searching historical places with text query...');
+            
+            // Query principal en español (igual que Google Maps)
+            const request = {
+                location: location,
+                radius: radius,
+                query: 'sitios históricos cerca de mí'
+            };
+
+            placesService.textSearch(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                    console.log(`🏛️ Found ${results.length} historical places`);
+                    
+                    // Filtrar para asegurar que son lugares históricos relevantes
+                    const filteredResults = results.filter(place => {
+                        const name = place.name.toLowerCase();
+                        const types = place.types || [];
+                        
+                        // Palabras clave de lugares NO históricos (excluir)
+                        const nonHistoricalKeywords = [
+                            'hotel', 'restaurante', 'restaurant', 'cafe', 'bar',
+                            'tienda', 'shop', 'store', 'centro comercial', 'mall',
+                            'parking', 'aparcamiento', 'gasolinera', 'gas station',
+                            'hospital', 'farmacia', 'pharmacy', 'supermercado',
+                            'supermercado', 'banco', 'bank'
+                        ];
+                        
+                        // Verificar si contiene keywords no históricos
+                        const hasNonHistoricalKeyword = nonHistoricalKeywords.some(keyword => 
+                            name.includes(keyword)
+                        );
+                        
+                        // Tipos no históricos
+                        const nonHistoricalTypes = [
+                            'restaurant', 'cafe', 'bar', 'food', 'lodging',
+                            'store', 'shopping_mall', 'gas_station', 'hospital',
+                            'pharmacy', 'bank', 'atm'
+                        ];
+                        
+                        const hasNonHistoricalType = types.some(type => 
+                            nonHistoricalTypes.includes(type)
+                        );
+                        
+                        // Palabras clave POSITIVAS de lugares históricos
+                        const historicalKeywords = [
+                            'castillo', 'castle', 'museo', 'museum', 'iglesia', 
+                            'church', 'catedral', 'cathedral', 'monasterio', 
+                            'monastery', 'ermita', 'chapel', 'palacio', 'palace',
+                            'fortaleza', 'fortress', 'muralla', 'wall', 'torre',
+                            'tower', 'templo', 'temple', 'basílica', 'basilica',
+                            'convento', 'convent', 'ruinas', 'ruins', 'histórico',
+                            'historical', 'antiguo', 'ancient', 'monumento',
+                            'monument', 'patrimonio', 'heritage', 'arqueológico',
+                            'archaeological', 'medieval', 'romano', 'roman',
+                            'árabe', 'arab', 'mezquita', 'mosque', 'sinagoga',
+                            'synagogue', 'puente', 'bridge', 'acueducto', 'aqueduct'
+                        ];
+                        
+                        const hasHistoricalKeyword = historicalKeywords.some(keyword =>
+                            name.includes(keyword)
+                        );
+                        
+                        // Tipos POSITIVOS de lugares históricos
+                        const historicalTypes = [
+                            'tourist_attraction', 'museum', 'church', 'place_of_worship',
+                            'point_of_interest', 'establishment', 'castle', 'monument'
+                        ];
+                        
+                        const hasHistoricalType = types.some(type =>
+                            historicalTypes.includes(type)
+                        );
+                        
+                        // INCLUIR si:
+                        // - Tiene keyword histórica O tiene tipo histórico
+                        // - Y NO tiene keywords ni tipos no históricos
+                        const isHistoricalPlace = (hasHistoricalKeyword || hasHistoricalType) && 
+                                                 !hasNonHistoricalKeyword && 
+                                                 !hasNonHistoricalType;
+                        
+                        return isHistoricalPlace;
+                    });
+                    
+                    console.log(`✅ Filtered to ${filteredResults.length} historical places`);
+                    
+                    // Procesar resultados
+                    const processedResults = filteredResults.map(place => 
+                        processGooglePlace(place, 'historical')
+                    );
+                    
+                    // Eliminar duplicados
+                    const uniquePOIs = [];
+                    const seenIds = new Set();
+                    
+                    processedResults.forEach(poi => {
+                        if (!seenIds.has(poi.id)) {
+                            seenIds.add(poi.id);
+                            uniquePOIs.push(poi);
+                        }
+                    });
+                    
+                    resolve(uniquePOIs);
+                } else {
+                    console.warn('⚠️ Historical text search failed:', status);
+                    // Fallback a búsqueda normal por tipos
+                    searchHistoricalPlacesFallback(location, radius)
+                        .then(resolve)
+                        .catch(reject);
+                }
+            });
+        });
+    }
+
+    /**
+     * Fallback para búsqueda de lugares históricos usando tipos de Google Places
+     * @param {Object} location - Google Maps LatLng
+     * @param {number} radius - Radio en metros
+     * @returns {Promise<Array>} - Array de POIs
+     */
+    function searchHistoricalPlacesFallback(location, radius) {
+        return new Promise((resolve, reject) => {
+            console.log('🔄 Using fallback for historical places...');
+            const types = ['tourist_attraction', 'museum', 'church', 'castle', 'monument'];
+            const allResults = [];
+            let totalSearches = types.length;
+            let searchesCompleted = 0;
+
+            const checkCompletion = () => {
+                searchesCompleted++;
+                if (searchesCompleted === totalSearches) {
+                    const uniquePOIs = [];
+                    const seenIds = new Set();
+                    
+                    allResults.forEach(poi => {
+                        if (!seenIds.has(poi.id)) {
+                            seenIds.add(poi.id);
+                            uniquePOIs.push(poi);
+                        }
+                    });
+                    
+                    resolve(uniquePOIs);
+                }
+            };
+
+            types.forEach(type => {
+                const request = {
+                    location: location,
+                    radius: radius,
+                    type: type
+                };
+
+                placesService.nearbySearch(request, (results, status) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK) {
+                        const processedResults = results.map(place => 
+                            processGooglePlace(place, 'historical')
+                        );
+                        allResults.push(...processedResults);
+                    }
+                    checkCompletion();
+                });
+            });
+        });
+    }
+
+    /**
+     * Fallback para búsqueda de lugares de naturaleza
      * @param {Object} location - Google Maps LatLng
      * @param {number} radius - Radio en metros
      * @returns {Promise<Array>} - Array de POIs
@@ -620,53 +797,12 @@ export const POIDataModule = (() => {
         return userLocation;
     }
 
-    /**
-     * Obtiene detalles completos de un POI desde Google Places API
-     * @param {string} placeId - ID del lugar de Google Places
-     * @returns {Promise<Object>} - Promesa con los detalles del lugar
-     */
-    async function fetchPlaceDetails(placeId) {
-        if (!placesService) {
-            throw new Error('Places Service not initialized');
-        }
-
-        return new Promise((resolve, reject) => {
-            const request = {
-                placeId: placeId,
-                fields: [
-                    'name',
-                    'formatted_address',
-                    'formatted_phone_number',
-                    'website',
-                    'rating',
-                    'user_ratings_total',
-                    'reviews',
-                    'photos',
-                    'opening_hours',
-                    'price_level',
-                    'types',
-                    'geometry',
-                    'url'
-                ]
-            };
-
-            placesService.getDetails(request, (place, status) => {
-                if (status === google.maps.places.PlacesServiceStatus.OK && place) {
-                    resolve(place);
-                } else {
-                    reject(new Error(`Failed to fetch place details: ${status}`));
-                }
-            });
-        });
-    }
-
     // API pública del módulo
     return {
         init,
         initPlacesService,
         setUserLocation,
         fetchPOIsFromGooglePlaces,
-        fetchPlaceDetails,
         getAllPOIs,
         getFilteredPOIs,
         getPOIById,
