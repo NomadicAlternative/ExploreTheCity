@@ -65,6 +65,8 @@ const App = (() => {
                     // Esperar a que termine la animación antes de remover
                     setTimeout(() => {
                         splashScreen.remove();
+                        // Después de remover el splash, solicitar ubicación del usuario
+                        requestUserLocationAfterSplash();
                     }, 500);
                 }
             }, 4000);
@@ -73,6 +75,19 @@ const App = (() => {
             console.error('❌ Error initializing app:', error);
             UIController.showNotification('Error loading application', 'error');
         }
+    }
+
+    /**
+     * Solicita la ubicación del usuario después de que termine el splash screen
+     */
+    function requestUserLocationAfterSplash() {
+        // Dar un pequeño delay para que el usuario vea el home antes del popup
+        setTimeout(() => {
+            if (MapaModule.getMap()) {
+                console.log('📍 Requesting user location after splash...');
+                initializeUserLocation();
+            }
+        }, 500);
     }
 
     /**
@@ -673,6 +688,7 @@ Source: Google Places
             console.log('🗺️ Initializing Google Maps...');
             const config = window.GOOGLE_MAPS_CONFIG || {};
             
+            // Inicializar mapa con ubicación por defecto (se actualizará después del splash)
             const mapInstance = MapaModule.initMap('map', {
                 center: config.defaultCenter || { lat: 38.4836, lng: -0.7768 },
                 zoom: config.defaultZoom || 14
@@ -688,12 +704,9 @@ Source: Google Places
             // Configurar listener para cuando el mapa se mueva y se detenga
             setupMapLocationListener();
 
-            // Actualizar ubicación inicial
+            // NO solicitar ubicación aquí - se hará después del splash
+            // Actualizar con ubicación por defecto del mapa
             updateLocationFromMap();
-
-            // Cargar POIs iniciales (categoría "all") - ya no es necesario mostrar automáticamente
-            // Los usuarios deberán hacer clic en un filtro para ver los POIs en el modal
-            console.log('✅ Map ready - Click on a filter to see places');
 
             console.log('✅ Google Maps initialized successfully');
         } catch (error) {
@@ -703,6 +716,62 @@ Source: Google Places
     }
 
     /**
+     * Inicializa la ubicación del usuario automáticamente al cargar
+     */
+    async function initializeUserLocation() {
+        try {
+            console.log('📍 Attempting to get user location...');
+            
+            // Intentar obtener ubicación del usuario
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const { latitude, longitude } = position.coords;
+                        console.log(`✅ User location detected: ${latitude}, ${longitude}`);
+                        
+                        // Centrar el mapa en la ubicación del usuario
+                        MapaModule.centerMap(latitude, longitude, 14);
+                        
+                        // Actualizar la ubicación en POIDataModule
+                        POIDataModule.setUserLocation(latitude, longitude);
+                        
+                        // Hacer reverse geocoding y actualizar el header
+                        try {
+                            const locationInfo = await MapaModule.reverseGeocode(latitude, longitude);
+                            if (locationInfo) {
+                                updateLocationText(locationInfo.city, locationInfo.country);
+                                console.log(`📍 Location set: ${locationInfo.city}, ${locationInfo.country}`);
+                            }
+                        } catch (error) {
+                            console.error('Error in reverse geocoding:', error);
+                        }
+                    },
+                    (error) => {
+                        console.warn('⚠️ Could not get user location:', error.message);
+                        console.log('Using default location (Petrer)');
+                        // Si falla, actualizar con ubicación por defecto
+                        updateLocationFromMap();
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                console.warn('⚠️ Geolocation not supported');
+                // Si no hay geolocalización, usar ubicación del mapa por defecto
+                updateLocationFromMap();
+            }
+        } catch (error) {
+            console.error('Error initializing user location:', error);
+            // Fallback a ubicación del mapa
+            updateLocationFromMap();
+        }
+    }
+
+    /**
+
      * Configura el listener para detectar cambios de ubicación en el mapa
      */
     function setupMapLocationListener() {
