@@ -172,7 +172,21 @@ const App = (() => {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 const target = item.getAttribute('href').substring(1);
-                RoutingModule.navigateTo(target);
+                
+                // Si es events, activar el filtro de events en lugar de navegar
+                if (target === 'events') {
+                    // Buscar el botón de filtro events y hacer click
+                    const eventsFilterBtn = document.querySelector('.filter-chip[data-category="events"]');
+                    if (eventsFilterBtn) {
+                        eventsFilterBtn.click();
+                    }
+                }
+                // Si es routes, mostrar modal informativo primero
+                else if (target === 'routes') {
+                    showRoutesInfoModal();
+                } else {
+                    RoutingModule.navigateTo(target);
+                }
             });
         });
 
@@ -1097,34 +1111,104 @@ ${event.url ? '¿Deseas comprar tickets?' : ''}
     }
 
     /**
-     * Carga y muestra rutas (placeholder)
+     * Carga y muestra rutas basadas en favoritos
      */
     function loadAndDisplayRoutes() {
         const routesList = document.getElementById('routesList');
         
         if (!routesList) return;
 
-        // TODO: Implementar módulo de rutas completo
-        routesList.innerHTML = `
-            <div class="route-card">
-                <h3 class="poi-title">Castle Route</h3>
-                <div class="poi-details">
-                    <div class="detail-item">
-                        <i class="fas fa-walking"></i>
-                        <span>3.5 km</span>
+        const favorites = FavoritesModule.getAllFavorites();
+
+        if (favorites.length === 0) {
+            routesList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-heart-broken"></i>
                     </div>
-                    <div class="detail-item">
-                        <i class="fas fa-clock"></i>
-                        <span>1.5 hours</span>
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-signal"></i>
-                        <span>Difficulty: Medium</span>
+                    <h3 class="empty-state-title">No Favorites Yet</h3>
+                    <p class="empty-state-message">
+                        Save your favorite places to see routes and directions here.
+                        <br>
+                        Start exploring and tap the ❤️ button on any place!
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        // Limpiar contenido
+        routesList.innerHTML = '';
+
+        // Crear tarjetas de ruta para cada favorito
+        favorites.forEach((fav, index) => {
+            const routeCard = document.createElement('div');
+            routeCard.className = 'route-card';
+            
+            // Calcular distancia si está disponible
+            const distanceText = fav.distance 
+                ? POIDataModule.formatDistance(fav.distance)
+                : 'Distance unknown';
+            
+            // Estimar tiempo (aproximado: 5 km/h caminando)
+            let timeText = 'Time unknown';
+            if (fav.distance) {
+                const hours = fav.distance / 5;
+                if (hours < 1) {
+                    timeText = `${Math.round(hours * 60)} min walk`;
+                } else {
+                    timeText = `${hours.toFixed(1)} hours walk`;
+                }
+            }
+            
+            // Icono según categoría
+            const categoryIcons = {
+                'historical': 'fa-landmark',
+                'restaurants': 'fa-utensils',
+                'nature': 'fa-tree',
+                'events': 'fa-calendar-alt',
+                'default': 'fa-map-marker-alt'
+            };
+            const icon = categoryIcons[fav.category] || categoryIcons['default'];
+            
+            routeCard.innerHTML = `
+                <div class="route-card-header">
+                    <div class="route-number">${index + 1}</div>
+                    <div class="route-card-info">
+                        <h3 class="route-card-title">
+                            <i class="fas ${icon}"></i>
+                            ${fav.name}
+                        </h3>
+                        <p class="route-card-category">${fav.category || 'Place'}</p>
                     </div>
                 </div>
-                <p class="poi-description">Beautiful hiking trail to Petrer Castle with panoramic views.</p>
-            </div>
-        `;
+                <div class="route-card-details">
+                    <div class="route-detail-item">
+                        <i class="fas fa-route"></i>
+                        <span>${distanceText}</span>
+                    </div>
+                    <div class="route-detail-item">
+                        <i class="fas fa-clock"></i>
+                        <span>${timeText}</span>
+                    </div>
+                </div>
+                ${fav.description ? `<p class="route-card-description">${fav.description}</p>` : ''}
+                <div class="route-card-actions">
+                    <button class="route-action-btn primary" onclick="App.openDirections('${fav.id}')">
+                        <i class="fas fa-directions"></i>
+                        <span>Get Directions</span>
+                    </button>
+                    <button class="route-action-btn secondary" onclick="App.viewOnMap('${fav.id}')">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>View on Map</span>
+                    </button>
+                </div>
+            `;
+            
+            routesList.appendChild(routeCard);
+        });
+
+        console.log(`🗺️ Displayed ${favorites.length} routes from favorites`);
     }
 
     /**
@@ -1141,11 +1225,203 @@ ${event.url ? '¿Deseas comprar tickets?' : ''}
         alert('Contact\n\nEmail: info@explorethecity.com\nPhone: +34 123 456 789\n\nDo you have suggestions? We\'d love to hear from you!');
     }
 
+    /**
+     * Muestra modal informativo de Routes según tenga o no favoritos
+     */
+    function showRoutesInfoModal() {
+        const modal = document.getElementById('routesInfoModal');
+        const title = document.getElementById('routesInfoTitle');
+        const message = document.getElementById('routesInfoMessage');
+        const btn = document.getElementById('routesInfoBtn');
+        
+        if (!modal || !title || !message || !btn) return;
+        
+        const favoritesCount = FavoritesModule.getFavoritesCount();
+        
+        if (favoritesCount > 0) {
+            // Usuario tiene favoritos
+            title.textContent = 'Routes to Your Favorites';
+            message.textContent = `We will open Google Maps with routes to all your ${favoritesCount} saved favorite places!`;
+        } else {
+            // Usuario NO tiene favoritos
+            title.textContent = 'No Favorites Yet';
+            message.textContent = 'Once you have selected favorites, you will be able to see routes to reach them. Start exploring and save your favorite places! ❤️';
+        }
+        
+        // Mostrar modal
+        modal.classList.add('active');
+        
+        // Manejar cierre del modal
+        const closeModal = () => {
+            modal.classList.remove('active');
+            
+            // Si tiene favoritos, abrir Google Maps con rutas
+            if (favoritesCount > 0) {
+                openGoogleMapsWithRoutes();
+            } else {
+                // Si no tiene favoritos, navegar a la vista de routes normal
+                RoutingModule.navigateTo('routes');
+            }
+        };
+        
+        btn.onclick = closeModal;
+        
+        // Cerrar al hacer click fuera del contenido
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        };
+        
+        console.log('📍 Routes info modal shown - Favorites:', favoritesCount);
+    }
+
+    /**
+     * Abre Google Maps con rutas a todos los favoritos
+     */
+    function openGoogleMapsWithRoutes() {
+        const favorites = FavoritesModule.getAllFavorites();
+        
+        if (favorites.length === 0) {
+            UIController.showNotification('No favorites to show routes', 'error');
+            return;
+        }
+
+        // Obtener ubicación actual
+        const userLocation = MapaModule.getCurrentLocation();
+        
+        if (!userLocation) {
+            UIController.showNotification('Location not available. Please enable location services.', 'warning');
+            return;
+        }
+
+        // Si solo hay un favorito, usar URL simple
+        if (favorites.length === 1) {
+            const fav = favorites[0];
+            if (!fav.coordinates) {
+                UIController.showNotification('Location not available for this place', 'error');
+                return;
+            }
+            
+            const url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${fav.coordinates.lat},${fav.coordinates.lng}&travelmode=walking`;
+            window.open(url, '_blank');
+            UIController.showNotification(`Opening route to ${fav.name}`, 'success');
+            return;
+        }
+
+        // Si hay múltiples favoritos, usar waypoints
+        // Google Maps permite hasta 9 waypoints en la URL
+        const maxWaypoints = Math.min(favorites.length - 1, 9);
+        
+        // El primer favorito es el destino
+        const destination = favorites[0];
+        if (!destination.coordinates) {
+            UIController.showNotification('Invalid destination coordinates', 'error');
+            return;
+        }
+
+        // Los siguientes son waypoints (hasta 9)
+        const waypoints = [];
+        for (let i = 1; i <= maxWaypoints && i < favorites.length; i++) {
+            const fav = favorites[i];
+            if (fav.coordinates) {
+                waypoints.push(`${fav.coordinates.lat},${fav.coordinates.lng}`);
+            }
+        }
+
+        // Construir URL de Google Maps
+        let url = `https://www.google.com/maps/dir/?api=1`;
+        url += `&origin=${userLocation.lat},${userLocation.lng}`;
+        url += `&destination=${destination.coordinates.lat},${destination.coordinates.lng}`;
+        
+        if (waypoints.length > 0) {
+            url += `&waypoints=${waypoints.join('|')}`;
+        }
+        
+        url += `&travelmode=walking`;
+
+        // Abrir Google Maps
+        window.open(url, '_blank');
+        
+        const message = waypoints.length > 0 
+            ? `Opening route with ${waypoints.length + 1} stops` 
+            : `Opening route to ${destination.name}`;
+        
+        UIController.showNotification(message, 'success');
+        
+        // Informar si hay más favoritos que no se pudieron incluir
+        if (favorites.length > maxWaypoints + 1) {
+            setTimeout(() => {
+                UIController.showNotification(`Note: Only ${maxWaypoints + 1} of ${favorites.length} favorites shown (Google Maps limit)`, 'info');
+            }, 2000);
+        }
+
+        console.log(`🗺️ Opened Google Maps with route to ${favorites.length} favorites`);
+    }
+
+    /**
+     * Abre direcciones en Google Maps
+     * @param {string} poiId - ID del POI
+     */
+    function openDirections(poiId) {
+        const poi = POIDataModule.getPOIById(poiId);
+        if (!poi || !poi.coordinates) {
+            // Intentar obtener de favoritos
+            const favorites = FavoritesModule.getAllFavorites();
+            const favorite = favorites.find(f => f.id === poiId);
+            if (!favorite || !favorite.coordinates) {
+                UIController.showNotification('Location not available', 'error');
+                return;
+            }
+            
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${favorite.coordinates.lat},${favorite.coordinates.lng}`;
+            window.open(url, '_blank');
+            return;
+        }
+        
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${poi.coordinates.lat},${poi.coordinates.lng}`;
+        window.open(url, '_blank');
+        console.log('🗺️ Opening directions to:', poi.name);
+    }
+
+    /**
+     * Muestra POI en el mapa
+     * @param {string} poiId - ID del POI
+     */
+    function viewOnMap(poiId) {
+        const poi = POIDataModule.getPOIById(poiId);
+        if (!poi) {
+            // Intentar obtener de favoritos
+            const favorites = FavoritesModule.getAllFavorites();
+            const favorite = favorites.find(f => f.id === poiId);
+            if (!favorite) {
+                UIController.showNotification('Place not found', 'error');
+                return;
+            }
+            
+            // Navegar a home y centrar en ubicación
+            RoutingModule.navigateTo('home');
+            if (favorite.coordinates && MapaModule.getMap()) {
+                MapaModule.getMap().setCenter(favorite.coordinates);
+                MapaModule.getMap().setZoom(16);
+                UIController.showNotification(`Showing ${favorite.name} on map`, 'success');
+            }
+            return;
+        }
+        
+        // Navegar a home y seleccionar POI
+        RoutingModule.navigateTo('home');
+        selectPOI(poi);
+        UIController.showNotification(`Showing ${poi.name} on map`, 'success');
+    }
+
     // API pública
     return {
         init,
         initializeMap,
-        removeFavorite
+        removeFavorite,
+        openDirections,
+        viewOnMap
     };
 })();
 

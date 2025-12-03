@@ -66,10 +66,10 @@
                 <img src="images/logo.webp" alt="Explore The City Logo" class="logo-img-mobile">
                 <span class="location-text">Loading location...</span>
             </div>
-        </div>
-        <div class="search-container">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" class="search-input" id="searchInput" placeholder="Search places">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search places">
+            </div>
         </div>
     </nav>
 
@@ -114,6 +114,20 @@
                     <!-- Las tarjetas de POI se cargarán aquí dinámicamente -->
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Informativo de Routes -->
+    <div class="routes-info-modal" id="routesInfoModal">
+        <div class="routes-info-modal-content">
+            <div class="routes-info-icon">
+                <i class="fas fa-route"></i>
+            </div>
+            <h2 class="routes-info-title" id="routesInfoTitle">Routes to Your Favorites</h2>
+            <p class="routes-info-message" id="routesInfoMessage">
+                Here you can see routes to all your saved favorite places
+            </p>
+            <button class="routes-info-btn" id="routesInfoBtn">Got it!</button>
         </div>
     </div>
 
