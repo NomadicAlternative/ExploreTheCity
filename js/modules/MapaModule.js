@@ -18,6 +18,9 @@ export const MapaModule = (() => {
         // Obtener configuración global
         const config = window.GOOGLE_MAPS_CONFIG || {};
         
+        // Detectar si es móvil
+        const isMobile = window.innerWidth < 768;
+        
         const defaultOptions = {
             center: config.defaultCenter || { lat: 38.4836, lng: -0.7768 },
             zoom: config.defaultZoom || 14,
@@ -25,6 +28,16 @@ export const MapaModule = (() => {
             streetViewControl: true,
             fullscreenControl: true,
             zoomControl: true,
+            // Configurar posición de controles en móvil
+            zoomControlOptions: {
+                position: isMobile ? google.maps.ControlPosition.RIGHT_TOP : google.maps.ControlPosition.RIGHT_BOTTOM
+            },
+            fullscreenControlOptions: {
+                position: isMobile ? google.maps.ControlPosition.RIGHT_TOP : google.maps.ControlPosition.RIGHT_TOP
+            },
+            streetViewControlOptions: {
+                position: isMobile ? google.maps.ControlPosition.RIGHT_TOP : google.maps.ControlPosition.RIGHT_BOTTOM
+            },
             styles: getMapStyles(),
             ...config.mapOptions
         };
@@ -39,6 +52,19 @@ export const MapaModule = (() => {
 
         try {
             map = new google.maps.Map(container, mapOptions);
+            
+            // Ajustar padding del mapa en móvil para que los controles no queden tapados
+            if (isMobile) {
+                map.setOptions({
+                    padding: {
+                        top: 80,      // Espacio para filtros superiores
+                        bottom: 80,   // Espacio para bottom nav
+                        left: 10,
+                        right: 10
+                    }
+                });
+            }
+            
             console.log('✅ Google Maps initialized successfully');
             return map;
         } catch (error) {
