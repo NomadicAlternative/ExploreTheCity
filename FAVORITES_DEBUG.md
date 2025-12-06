@@ -2,32 +2,33 @@
 
 ## Problema Reportado
 Cuando se agrega un lugar como favorito, **no aparece inmediatamente** en la página "My Favorites". Solo aparece después de:
-- Agregar varios favoritos
+- Agregar varios favoritos (específicamente el 3ro)
 - Entrar y salir varias veces de My Favorites
+
+### Comportamiento Específico Observado:
+1. Agregar 1er favorito → NO aparece en My Favorites
+2. Agregar 2do favorito → NO aparece en My Favorites  
+3. Agregar 3er favorito → Al cerrar modal, se abre My Favorites con los 3 favoritos
 
 ---
 
 ## 🔍 Análisis del Problema
 
-### Comportamiento Observado:
-1. Usuario está en vista "Home"
-2. Click en botón de favorito (corazón)
-3. POI se agrega a localStorage
-4. Usuario navega a "My Favorites"
-5. **La lista NO se actualiza** (muestra lista vacía o desactualizada)
+### Causa Raíz Identificada:
+**Problema de Timing del DOM** - La función `loadAndDisplayFavorites()` se ejecuta ANTES de que el elemento `#favoritesList` esté completamente renderizado en el DOM.
 
-### Causa Raíz:
-El problema NO es con el almacenamiento (localStorage funciona correctamente), sino con la **actualización del DOM**.
+### Flujo del Problema:
+```
+1. Usuario navega a "My Favorites"
+2. showView('favorites') → Remueve clase 'hidden'
+3. loadAndDisplayFavorites() se ejecuta INMEDIATAMENTE
+4. document.getElementById('favoritesList') → null (DOM aún no renderizado)
+5. Función retorna sin hacer nada
+6. Usuario ve página vacía
+```
 
-El flujo era:
-```
-Add Favorite → updateFavoriteUI() checks currentView
-→ currentView = 'home' (not 'favorites')
-→ loadAndDisplayFavorites() NO se ejecuta
-→ Usuario navega a 'favorites'
-→ RoutingModule.onRoute('favorites') → loadAndDisplayFavorites()
-→ Pero a veces el DOM no está listo
-```
+### ¿Por qué funciona al 3er intento?
+Al agregar el 3er favorito, algo causa un re-render completo (posiblemente cache del navegador o múltiples event listeners), lo que hace que el DOM esté listo cuando se llama la función.
 
 ---
 
