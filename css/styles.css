@@ -2330,6 +2330,7 @@ a.empty-state-cta {
     }
 
     .search-container-desktop {
+        display: flex;
         position: relative;
         margin: 1.5rem;
     }
@@ -2459,25 +2460,28 @@ a.empty-state-cta {
     .navbar-mobile .nav-top-row {
         flex-wrap: nowrap;
         justify-content: space-between;
-        gap: 0;
+        gap: 1rem;
         margin-bottom: 0;
         align-items: center;
+        padding: 0 1rem;
     }
     
     .navbar-mobile .search-container {
         order: 2;
         width: auto;
         flex-basis: auto;
-        max-width: 380px;
-        min-width: 300px;
+        max-width: 400px;
+        min-width: 250px;
+        flex: 1;
         margin-top: 0;
-        margin-right: -1rem;
-        margin-left: 12rem;
+        margin-right: 0;
+        margin-left: auto;
     }
     
     .navbar-mobile .logo-location {
         order: 1;
         flex: 0 0 auto;
+        max-width: 50%;
     }
 
     /* Ocultar navbar desktop antiguo */
@@ -2588,9 +2592,10 @@ a.empty-state-cta {
         display: none;
     }
 
-    .search-container-desktop {
+    /* search-container-desktop se muestra en navbar mobile para desktop */
+    /* .search-container-desktop {
         display: none;
-    }
+    } */
 
     .poi-card-desktop {
         display: none;
