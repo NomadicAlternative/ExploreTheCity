@@ -82,13 +82,13 @@ const App = (() => {
      * Solicita la ubicación del usuario después de que termine el splash screen
      */
     function requestUserLocationAfterSplash() {
-        // Dar un pequeño delay para que el usuario vea el home antes del popup
+        // Dar un delay más largo para que el usuario aprecie la transición y vea el home
         setTimeout(() => {
             if (MapaModule.getMap()) {
                 console.log('📍 Requesting user location after splash...');
                 initializeUserLocation();
             }
-        }, 500);
+        }, 1500); // Aumentado a 1.5 segundos después del splash
     }
 
     /**
