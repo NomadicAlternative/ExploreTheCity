@@ -18,6 +18,7 @@ import { ResponsiveModule } from './modules/ResponsiveModule.js';
 // ====================================
 const App = (() => {
     let isInitialized = false;
+    let currentLocationInfo = { city: 'Petrer', country: 'Spain' }; // Ubicación por defecto
 
     /**
      * Inicializa la aplicación
@@ -235,18 +236,263 @@ const App = (() => {
     function setupSearchListeners() {
         const searchInput = document.getElementById('searchInput');
         const searchInputDesktop = document.getElementById('searchInputDesktop');
+        const searchSuggestions = document.getElementById('searchSuggestions');
+        const searchSuggestionsDesktop = document.getElementById('searchSuggestionsDesktop');
+
+        // Variables para navegación por teclado
+        let currentHighlightedIndex = -1;
+        let currentSuggestions = [];
+        let currentInput = null;
+        let currentDropdown = null;
 
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
-                handleSearch(e.target.value);
+                currentInput = searchInput;
+                currentDropdown = searchSuggestions;
+                const value = e.target.value;
+                
+                if (value.length >= 2) {
+                    const suggestions = getSuggestions(value);
+                    currentSuggestions = suggestions;
+                    showSuggestions(suggestions, searchSuggestions, value);
+                    currentHighlightedIndex = -1;
+                } else {
+                    hideSuggestions(searchSuggestions);
+                    handleSearch(value);
+                }
+            });
+
+            searchInput.addEventListener('keydown', (e) => {
+                handleKeyboardNavigation(e, searchSuggestions, () => currentSuggestions, 
+                    (index) => { currentHighlightedIndex = index; }, 
+                    () => currentHighlightedIndex);
+            });
+
+            // Cerrar al hacer click fuera
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+                    hideSuggestions(searchSuggestions);
+                }
             });
         }
 
         if (searchInputDesktop) {
             searchInputDesktop.addEventListener('input', (e) => {
-                handleSearch(e.target.value);
+                currentInput = searchInputDesktop;
+                currentDropdown = searchSuggestionsDesktop;
+                const value = e.target.value;
+                
+                if (value.length >= 2) {
+                    const suggestions = getSuggestions(value);
+                    currentSuggestions = suggestions;
+                    showSuggestions(suggestions, searchSuggestionsDesktop, value);
+                    currentHighlightedIndex = -1;
+                } else {
+                    hideSuggestions(searchSuggestionsDesktop);
+                    handleSearch(value);
+                }
+            });
+
+            searchInputDesktop.addEventListener('keydown', (e) => {
+                handleKeyboardNavigation(e, searchSuggestionsDesktop, () => currentSuggestions, 
+                    (index) => { currentHighlightedIndex = index; }, 
+                    () => currentHighlightedIndex);
+            });
+
+            // Cerrar al hacer click fuera
+            document.addEventListener('click', (e) => {
+                if (!searchInputDesktop.contains(e.target) && !searchSuggestionsDesktop.contains(e.target)) {
+                    hideSuggestions(searchSuggestionsDesktop);
+                }
             });
         }
+    }
+
+    /**
+     * Obtiene sugerencias de búsqueda
+     * @param {string} searchTerm - Término de búsqueda
+     * @returns {Array} - Array de POIs que coinciden
+     */
+    function getSuggestions(searchTerm) {
+        if (!POIDataModule) {
+            console.error('❌ POIDataModule not available');
+            return [];
+        }
+        
+        const results = POIDataModule.searchPOIs(searchTerm);
+        // Limitar a máximo 8 sugerencias
+        return results.slice(0, 8);
+    }
+
+    /**
+     * Muestra el dropdown de sugerencias
+     * @param {Array} suggestions - Array de POIs
+     * @param {HTMLElement} dropdown - Elemento del dropdown
+     * @param {string} searchTerm - Término de búsqueda
+     */
+    function showSuggestions(suggestions, dropdown, searchTerm) {
+        if (!dropdown) return;
+
+        if (suggestions.length === 0) {
+            dropdown.innerHTML = `
+                <div class="search-suggestions-empty">
+                    <i class="fas fa-search"></i>
+                    <p>No results found for "${searchTerm}"</p>
+                </div>
+            `;
+            dropdown.classList.add('active');
+            return;
+        }
+
+        const highlightText = (text, term) => {
+            const regex = new RegExp(`(${term})`, 'gi');
+            return text.replace(regex, '<span class="search-suggestion-highlight">$1</span>');
+        };
+
+        const getCategoryIcon = (category) => {
+            const icons = {
+                historical: 'fa-landmark',
+                restaurants: 'fa-utensils',
+                nature: 'fa-tree',
+                museums: 'fa-museum',
+                parks: 'fa-tree',
+                entertainment: 'fa-ticket-alt',
+                shopping: 'fa-shopping-bag',
+                events: 'fa-calendar'
+            };
+            return icons[category.toLowerCase()] || 'fa-map-marker-alt';
+        };
+
+        const html = suggestions.map((poi, index) => `
+            <div class="search-suggestion-item" data-poi-index="${index}">
+                <div class="search-suggestion-icon">
+                    <i class="fas ${getCategoryIcon(poi.category)}"></i>
+                </div>
+                <div class="search-suggestion-content">
+                    <div class="search-suggestion-name">${highlightText(poi.name, searchTerm)}</div>
+                    <div class="search-suggestion-category">${poi.category}</div>
+                </div>
+            </div>
+        `).join('');
+
+        dropdown.innerHTML = html;
+        dropdown.classList.add('active');
+
+        // Agregar event listeners a cada item
+        dropdown.querySelectorAll('.search-suggestion-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const poiIndex = parseInt(item.getAttribute('data-poi-index'));
+                const selectedPoi = suggestions[poiIndex];
+                selectSuggestion(selectedPoi, dropdown);
+            });
+        });
+    }
+
+    /**
+     * Oculta el dropdown de sugerencias
+     * @param {HTMLElement} dropdown - Elemento del dropdown
+     */
+    function hideSuggestions(dropdown) {
+        if (dropdown) {
+            dropdown.classList.remove('active');
+        }
+    }
+
+    /**
+     * Selecciona una sugerencia
+     * @param {Object} poi - POI seleccionado
+     * @param {HTMLElement} dropdown - Elemento del dropdown
+     */
+    function selectSuggestion(poi, dropdown) {
+        console.log('🎯 selectSuggestion called with POI:', poi?.name);
+        
+        if (!poi) {
+            console.error('❌ POI is null or undefined');
+            return;
+        }
+
+        console.log('📍 POI data:', poi);
+
+        // Actualizar el input con el nombre del POI
+        const searchInput = document.getElementById('searchInput');
+        const searchInputDesktop = document.getElementById('searchInputDesktop');
+        
+        if (dropdown === document.getElementById('searchSuggestions')) {
+            if (searchInput) searchInput.value = poi.name;
+        } else {
+            if (searchInputDesktop) searchInputDesktop.value = poi.name;
+        }
+
+        // Ocultar sugerencias
+        hideSuggestions(dropdown);
+
+        // Buscar y actualizar mapa
+        handleSearch(poi.name);
+
+        console.log('🎴 Opening POI modal...');
+        // Abrir modal del POI con su categoría y el POI en un array
+        UIController.openPOIModal(poi.category, [poi]);
+        console.log('✅ Modal should be open now');
+    }
+
+    /**
+     * Maneja la navegación por teclado en las sugerencias
+     * @param {KeyboardEvent} e - Evento de teclado
+     * @param {HTMLElement} dropdown - Elemento del dropdown
+     * @param {Function} getSuggestions - Función para obtener sugerencias actuales
+     * @param {Function} setIndex - Función para establecer el índice
+     * @param {Function} getIndex - Función para obtener el índice actual
+     */
+    function handleKeyboardNavigation(e, dropdown, getSuggestions, setIndex, getIndex) {
+        if (!dropdown.classList.contains('active')) return;
+
+        const suggestions = getSuggestions();
+        const items = dropdown.querySelectorAll('.search-suggestion-item');
+        let currentIndex = getIndex();
+
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                currentIndex = (currentIndex + 1) % items.length;
+                updateHighlight(items, currentIndex);
+                setIndex(currentIndex);
+                break;
+
+            case 'ArrowUp':
+                e.preventDefault();
+                currentIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+                updateHighlight(items, currentIndex);
+                setIndex(currentIndex);
+                break;
+
+            case 'Enter':
+                e.preventDefault();
+                if (currentIndex >= 0 && items[currentIndex]) {
+                    items[currentIndex].click();
+                }
+                break;
+
+            case 'Escape':
+                hideSuggestions(dropdown);
+                setIndex(-1);
+                break;
+        }
+    }
+
+    /**
+     * Actualiza el highlight visual en las sugerencias
+     * @param {NodeList} items - Lista de items
+     * @param {number} index - Índice a destacar
+     */
+    function updateHighlight(items, index) {
+        items.forEach((item, i) => {
+            if (i === index) {
+                item.classList.add('highlighted');
+                item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            } else {
+                item.classList.remove('highlighted');
+            }
+        });
     }
 
     /**
@@ -257,15 +503,22 @@ const App = (() => {
         if (searchTerm.length < 2) {
             // Mostrar todos los POIs
             const allPOIs = POIDataModule.getAllPOIs();
-            updateMapMarkers(allPOIs);
+            // Actualizar mapa solo si está disponible
+            if (MapaModule.getMap()) {
+                updateMapMarkers(allPOIs);
+            }
             return;
         }
 
         const results = POIDataModule.searchPOIs(searchTerm);
         console.log(`Search results for "${searchTerm}":`, results.length);
-        updateMapMarkers(results);
         
-        if (results.length === 0) {
+        // Actualizar mapa solo si está disponible
+        if (MapaModule.getMap()) {
+            updateMapMarkers(results);
+        }
+        
+        if (results.length === 0 && searchTerm.length >= 2) {
             UIController.showNotification('No results found', 'info');
         }
     }
@@ -676,9 +929,17 @@ Source: Google Places
      */
     function setupGeolocationListeners() {
         const locationBtn = document.getElementById('locationBtn');
+        const myLocationNavBtn = document.getElementById('myLocationNavBtn');
         
         if (locationBtn) {
             locationBtn.addEventListener('click', getUserLocation);
+        }
+        
+        if (myLocationNavBtn) {
+            myLocationNavBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                getUserLocation();
+            });
         }
     }
 
@@ -811,6 +1072,10 @@ Source: Google Places
             // Inicializar Places Service con el mapa
             POIDataModule.initPlacesService(mapInstance);
 
+            // Cargar POIs iniciales (todas las categorías)
+            console.log('🔍 Loading initial POIs...');
+            loadInitialPOIs();
+
             // Configurar listener para cuando el mapa se mueva y se detenga
             setupMapLocationListener();
 
@@ -822,6 +1087,27 @@ Source: Google Places
         } catch (error) {
             console.error('❌ Error initializing map:', error);
             UIController.showNotification('Error loading map. Please refresh the page.', 'error');
+        }
+    }
+
+    /**
+     * Carga los POIs iniciales (todas las categorías)
+     */
+    async function loadInitialPOIs() {
+        try {
+            console.log('🔄 Fetching initial POIs from Google Places...');
+            
+            // Cargar todas las categorías con un radio de 5km
+            const pois = await POIDataModule.fetchPOIsFromGooglePlaces('all', 5000);
+            
+            console.log(`✅ ${pois.length} initial POIs loaded`);
+            
+            // Actualizar marcadores en el mapa
+            if (pois.length > 0) {
+                updateMapMarkers(pois);
+            }
+        } catch (error) {
+            console.error('❌ Error loading initial POIs:', error);
         }
     }
 
@@ -844,6 +1130,10 @@ Source: Google Places
                         
                         // Actualizar la ubicación en POIDataModule
                         POIDataModule.setUserLocation(latitude, longitude);
+                        
+                        // Actualizar la ubicación en EventsModule para eventos de Ticketmaster
+                        await EventsModule.setUserLocation(latitude, longitude);
+                        console.log('🎫 Events location updated');
                         
                         // Hacer reverse geocoding y actualizar el header
                         try {
@@ -905,6 +1195,10 @@ Source: Google Places
             // Actualizar la ubicación del usuario en POIDataModule
             POIDataModule.setUserLocation(center.lat, center.lng);
 
+            // Actualizar la ubicación en EventsModule para eventos de Ticketmaster
+            await EventsModule.setUserLocation(center.lat, center.lng);
+            console.log('🎫 Events location updated from map');
+
             // Hacer reverse geocoding para obtener ciudad y país
             const locationInfo = await MapaModule.reverseGeocode(center.lat, center.lng);
             
@@ -924,10 +1218,24 @@ Source: Google Places
      * @param {string} country - Nombre del país
      */
     function updateLocationText(city, country) {
+        // Guardar la información de ubicación actual
+        currentLocationInfo = { city, country };
+        
         const locationText = document.querySelector('.location-text');
         if (locationText) {
             locationText.textContent = `${city}, ${country}`;
         }
+    }
+
+    /**
+     * Obtiene el texto de ubicación actual para mostrar
+     * @returns {string} - Texto de ubicación formateado
+     */
+    function getLocationDisplayText() {
+        if (currentLocationInfo.city && currentLocationInfo.country) {
+            return `${currentLocationInfo.city}, ${currentLocationInfo.country}`;
+        }
+        return 'this area';
     }
 
     /**
@@ -963,23 +1271,40 @@ Source: Google Places
     function loadAndDisplayFavoritesInternal(favoritesList) {
         const favorites = FavoritesModule.getAllFavorites();
         console.log('❤️ Loading', favorites.length, 'favorites');
+        console.log('📍 favoritesList element:', favoritesList);
 
         if (favorites.length === 0) {
-            favoritesList.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">
-                        <i class="fas fa-heart-broken"></i>
+            console.log('🎨 Setting empty state...');
+            
+            // Detectar si es móvil o desktop
+            const isMobile = window.innerWidth < 1024;
+            
+            if (isMobile) {
+                // En móvil: mostrar modal
+                console.log('📱 Mobile detected - showing modal');
+                favoritesList.innerHTML = ''; // Limpiar el contenedor
+                showEmptyFavoritesModal();
+            } else {
+                // En desktop: mostrar inline
+                console.log('🖥️ Desktop detected - showing inline');
+                favoritesList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-heart-broken"></i>
+                        </div>
+                        <h3 class="empty-state-title">No favorites yet</h3>
+                        <p class="empty-state-description">
+                            Start exploring and save your favorite places to see them here!
+                        </p>
+                        <a href="#home" class="empty-state-cta">
+                            <i class="fas fa-compass"></i>
+                            Explore Places
+                        </a>
                     </div>
-                    <h3 class="empty-state-title">No favorites yet</h3>
-                    <p class="empty-state-description">
-                        Start exploring and save your favorite places to see them here!
-                    </p>
-                    <button class="empty-state-cta" onclick="RoutingModule.navigateTo('home')">
-                        <i class="fas fa-compass"></i>
-                        Explore Places
-                    </button>
-                </div>
-            `;
+                `;
+            }
+            
+            console.log('✅ Empty state set');
             return;
         }
 
@@ -1055,15 +1380,32 @@ Source: Google Places
         const events = EventsModule.getNearbyEvents();
 
         if (events.length === 0) {
+            // Obtener la ubicación actual para el mensaje
+            const locationText = getLocationDisplayText();
+            
             eventsList.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">
                         <i class="fas fa-calendar-times"></i>
                     </div>
-                    <h3 class="empty-state-title">No events found</h3>
+                    <h3 class="empty-state-title">No Events Available</h3>
                     <p class="empty-state-description">
-                        There are no events available in your area right now. Check back later!
+                        We couldn't find any events in <strong>${locationText}</strong>.
                     </p>
+                    <div style="background: #f8f9fa; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 8px; margin: 1.5rem 0; text-align: left;">
+                        <p style="margin: 0; font-size: 0.9rem; color: #666; line-height: 1.6;">
+                            <i class="fas fa-info-circle" style="color: #ffc107; margin-right: 0.5rem;"></i>
+                            <strong>Note:</strong> Ticketmaster coverage is limited in some regions, including most of South America, Africa, and Asia.
+                        </p>
+                        <p style="margin: 0.75rem 0 0 0; font-size: 0.9rem; color: #666;">
+                            <i class="fas fa-globe-americas" style="color: #28a745; margin-right: 0.5rem;"></i>
+                            Try searching in: <strong>Madrid</strong>, <strong>Paris</strong>, <strong>London</strong>, <strong>New York</strong>, <strong>Los Angeles</strong>, <strong>Mexico City</strong>, <strong>Toronto</strong>, or <strong>Sydney</strong>.
+                        </p>
+                    </div>
+                    <a href="#home" class="empty-state-cta" onclick="RoutingModule.navigateTo('home')">
+                        <i class="fas fa-map-marked-alt"></i>
+                        Explore Map
+                    </a>
                 </div>
             `;
             return;
@@ -1334,6 +1676,47 @@ ${event.url ? '¿Deseas comprar tickets?' : ''}
         };
         
         console.log('📍 Routes info modal shown - Favorites:', favoritesCount);
+    }
+
+    /**
+     * Muestra el modal de empty favorites (solo móvil)
+     */
+    function showEmptyFavoritesModal() {
+        const modal = document.getElementById('emptyFavoritesModal');
+        const closeBtn = document.getElementById('emptyFavoritesModalClose');
+        const exploreBtn = document.getElementById('emptyFavoritesExploreBtn');
+        
+        if (!modal) {
+            console.warn('⚠️ Empty favorites modal not found');
+            return;
+        }
+        
+        // Mostrar modal
+        modal.classList.add('active');
+        console.log('✅ Empty favorites modal shown');
+        
+        // Manejar cierre del modal
+        const closeModal = () => {
+            modal.classList.remove('active');
+        };
+        
+        if (closeBtn) {
+            closeBtn.onclick = closeModal;
+        }
+        
+        // Cerrar al hacer click fuera del contenido
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        };
+        
+        // El botón "Explore Places" ya tiene href="#home" así que navegará automáticamente
+        if (exploreBtn) {
+            exploreBtn.addEventListener('click', () => {
+                closeModal();
+            });
+        }
     }
 
     /**

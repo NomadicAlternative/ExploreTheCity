@@ -795,25 +795,29 @@ export const UIController = (() => {
      * @param {string} activeView - Vista activa
      */
     function updateActiveNavLinks(activeView) {
-        // Mobile
-        elements.menuLinks.forEach(link => {
-            const href = link.getAttribute('href')?.substring(1);
-            if (href === activeView) {
-                link.classList.add('active');
-            } else {
-                link.classList.remove('active');
-            }
-        });
+        // Mobile - Bottom Navigation
+        if (elements.bottomNavItems) {
+            elements.bottomNavItems.forEach(item => {
+                const href = item.getAttribute('href')?.substring(1);
+                if (href === activeView) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
 
         // Desktop
-        elements.navDesktopLinks.forEach(link => {
-            const href = link.getAttribute('href')?.substring(1);
-            if (href === activeView) {
-                link.classList.add('active');
-            } else {
-                link.classList.remove('active');
-            }
-        });
+        if (elements.navDesktopLinks) {
+            elements.navDesktopLinks.forEach(link => {
+                const href = link.getAttribute('href')?.substring(1);
+                if (href === activeView) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+        }
     }
 
     /**
