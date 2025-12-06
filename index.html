@@ -68,7 +68,8 @@
             </div>
             <div class="search-container">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" class="search-input" id="searchInput" placeholder="Search places">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search places" autocomplete="off">
+                <div class="search-suggestions" id="searchSuggestions"></div>
             </div>
         </div>
     </nav>
@@ -91,9 +92,9 @@
             <i class="fas fa-route"></i>
             <span>Routes</span>
         </a>
-        <a href="#about" class="bottom-nav-item" data-page="about">
-            <i class="fas fa-user"></i>
-            <span>Profile</span>
+        <a href="#home" class="bottom-nav-item" id="myLocationNavBtn">
+            <i class="fas fa-location-arrow"></i>
+            <span>Location</span>
         </a>
     </nav>
 
@@ -128,6 +129,28 @@
                 Here you can see routes to all your saved favorite places
             </p>
             <button class="routes-info-btn" id="routesInfoBtn">Got it!</button>
+        </div>
+    </div>
+
+    <!-- Modal Empty State de Favorites (solo móvil) -->
+    <div class="empty-favorites-modal" id="emptyFavoritesModal">
+        <div class="empty-favorites-modal-content">
+            <button class="empty-favorites-modal-close" id="emptyFavoritesModalClose" aria-label="Close modal">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-heart-broken"></i>
+                </div>
+                <h3 class="empty-state-title">No favorites yet</h3>
+                <p class="empty-state-description">
+                    Start exploring and save your favorite places to see them here!
+                </p>
+                <a href="#home" class="empty-state-cta" id="emptyFavoritesExploreBtn">
+                    <i class="fas fa-compass"></i>
+                    Explore Places
+                </a>
+            </div>
         </div>
     </div>
 
@@ -189,7 +212,8 @@
                 <!-- Búsqueda Desktop -->
                 <div class="search-container-desktop">
                     <i class="fas fa-search search-icon"></i>
-                    <input type="text" class="search-input-desktop" id="searchInputDesktop" placeholder="Search places">
+                    <input type="text" class="search-input-desktop" id="searchInputDesktop" placeholder="Search places" autocomplete="off">
+                    <div class="search-suggestions" id="searchSuggestionsDesktop"></div>
                 </div>
                 
                 <!-- Mapa Interactivo -->

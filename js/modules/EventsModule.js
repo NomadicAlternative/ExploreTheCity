@@ -88,20 +88,32 @@ export const EventsModule = (() => {
         console.log('🎫 Fetching events from Ticketmaster API...');
 
         try {
-            const params = new URLSearchParams({
+            // Parámetros base
+            const params = {
                 apikey: TICKETMASTER_CONFIG.apiKey,
                 latlong: `${userLocation.lat},${userLocation.lng}`,
                 radius: options.radius || TICKETMASTER_CONFIG.defaultRadius,
                 unit: 'km',
-                locale: TICKETMASTER_CONFIG.locale,
-                countryCode: TICKETMASTER_CONFIG.countryCode,
+                locale: 'en-us', // Usar inglés para mejor compatibilidad global
                 size: options.size || TICKETMASTER_CONFIG.size,
                 sort: 'distance,asc', // Ordenar por distancia (más cercano primero)
-                ...options.params
-            });
+            };
 
-            const url = `${TICKETMASTER_CONFIG.baseUrl}/events.json?${params}`;
+            // Solo agregar countryCode si se especifica explícitamente en options
+            // De lo contrario, dejar que Ticketmaster use las coordenadas
+            if (options.countryCode) {
+                params.countryCode = options.countryCode;
+            }
+
+            // Agregar parámetros adicionales
+            if (options.params) {
+                Object.assign(params, options.params);
+            }
+
+            const urlParams = new URLSearchParams(params);
+            const url = `${TICKETMASTER_CONFIG.baseUrl}/events.json?${urlParams}`;
             console.log('🌐 API Request URL:', url);
+            console.log('📍 Searching events at:', userLocation);
 
             const response = await fetch(url);
             
@@ -397,11 +409,11 @@ export const EventsModule = (() => {
         console.log(`🔍 Searching events in ${city}...`);
 
         try {
+            // No incluir countryCode para permitir búsquedas globales
             const params = new URLSearchParams({
                 apikey: TICKETMASTER_CONFIG.apiKey,
                 city: city,
-                locale: TICKETMASTER_CONFIG.locale,
-                countryCode: TICKETMASTER_CONFIG.countryCode,
+                locale: 'en-us', // Usar inglés para mejor compatibilidad global
                 size: TICKETMASTER_CONFIG.size,
                 sort: 'date,asc'
             });
