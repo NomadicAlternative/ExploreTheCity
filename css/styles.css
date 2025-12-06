@@ -674,7 +674,8 @@ a.filter-chip {
     margin-bottom: 1rem;
     padding: 1.2rem;
     border-radius: 20px;
-    box-shadow: 0 4px 12px var(--shadow);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08),
+                0 1px 3px rgba(0, 0, 0, 0.04);
     cursor: pointer;
     /* Optimización: crear contexto de apilamiento propio */
     position: relative;
@@ -682,14 +683,15 @@ a.filter-chip {
     transform: translateZ(0);
     backface-visibility: hidden;
     /* Transiciones suavizadas */
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     /* Prevenir superposición */
     isolation: isolate;
 }
 
 .poi-card-mobile:hover {
-    transform: translateY(-2px) translateZ(0);
-    box-shadow: 0 6px 16px var(--shadow-dark);
+    transform: translateY(-4px) translateZ(0);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12),
+                0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .poi-card-mobile:last-child {
@@ -724,6 +726,8 @@ a.filter-chip {
 
 .favorite-btn {
     background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 2px solid rgba(230, 57, 70, 0.2);
     border-radius: 50%;
     color: var(--accent-color-1);
@@ -734,21 +738,23 @@ a.filter-chip {
     min-height: 44px;
     padding: 0;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10;
     position: relative;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1), 
+                0 1px 3px rgba(0,0,0,0.08);
 }
 
 .favorite-btn:hover {
     transform: scale(1.1);
     background: rgba(255, 255, 255, 1);
     border-color: var(--accent-color-1);
-    box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);
+    box-shadow: 0 6px 16px rgba(230, 57, 70, 0.25),
+                0 2px 8px rgba(230, 57, 70, 0.15);
 }
 
 .favorite-btn:active {
@@ -1164,6 +1170,80 @@ a.filter-chip {
     -webkit-overflow-scrolling: touch;
 }
 
+/* ====================================
+   Empty States - UI/UX Optimized
+   ==================================== */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    max-width: 400px;
+    margin: 0 auto;
+    animation: fadeIn 0.5s ease;
+}
+
+.empty-state-icon {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 24px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: iconFloat 3s ease-in-out infinite;
+}
+
+.empty-state-icon i {
+    font-size: 48px;
+    color: var(--primary-color);
+    opacity: 0.7;
+}
+
+.empty-state-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 12px;
+}
+
+.empty-state-description {
+    font-size: 16px;
+    color: #6b7280;
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.empty-state-cta {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.empty-state-cta:hover {
+    background: var(--accent-color-2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.empty-state-cta:active {
+    transform: translateY(0);
+}
+
+@keyframes iconFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+/* Legacy support */
 .empty-message {
     text-align: center;
     color: #999;
@@ -3296,6 +3376,200 @@ a:focus-visible {
 
 .skeleton-text.short {
     width: 60%;
+}
+
+/* ====================================
+   Skeleton Loaders - Enhanced
+   ==================================== */
+.skeleton-card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.skeleton-line {
+    height: 16px;
+    background: linear-gradient(
+        90deg,
+        #e0e0e0 25%,
+        #f0f0f0 50%,
+        #e0e0e0 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 12px;
+}
+
+.skeleton-image {
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(
+        90deg,
+        #e0e0e0 25%,
+        #f0f0f0 50%,
+        #e0e0e0 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+@keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ====================================
+   Loading States - Contextual
+   ==================================== */
+.loading-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 16px;
+    border: 3px solid #f3f4f6;
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.loading-text {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ====================================
+   Enhanced Button System
+   ==================================== */
+.btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn:active::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--accent-color-2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(61, 90, 128, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background: white;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.btn-secondary:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--primary-color);
+}
+
+.btn-ghost:hover {
+    background: rgba(61, 90, 128, 0.1);
+}
+
+/* ====================================
+   Micro-animations
+   ==================================== */
+@keyframes cardSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.poi-card {
+    animation: cardSlideUp 0.4s ease;
+}
+
+.poi-card:nth-child(2) { animation-delay: 0.05s; }
+.poi-card:nth-child(3) { animation-delay: 0.1s; }
+.poi-card:nth-child(4) { animation-delay: 0.15s; }
+.poi-card:nth-child(5) { animation-delay: 0.2s; }
+.poi-card:nth-child(6) { animation-delay: 0.25s; }
+
+@keyframes heartPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+.favorite-btn.adding i {
+    animation: heartPop 0.6s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .skeleton-button {

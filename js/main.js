@@ -965,7 +965,21 @@ Source: Google Places
         console.log('❤️ Loading', favorites.length, 'favorites');
 
         if (favorites.length === 0) {
-            favoritesList.innerHTML = '<p class="empty-message">You don\'t have any saved favorites yet.</p>';
+            favoritesList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-heart-broken"></i>
+                    </div>
+                    <h3 class="empty-state-title">No favorites yet</h3>
+                    <p class="empty-state-description">
+                        Start exploring and save your favorite places to see them here!
+                    </p>
+                    <button class="empty-state-cta" onclick="RoutingModule.navigateTo('home')">
+                        <i class="fas fa-compass"></i>
+                        Explore Places
+                    </button>
+                </div>
+            `;
             return;
         }
 
@@ -1029,14 +1043,29 @@ Source: Google Places
         
         if (!eventsList) return;
 
-        // Mostrar loading
-        eventsList.innerHTML = '<p class="loading-message"><i class="fas fa-spinner fa-spin"></i> Cargando eventos...</p>';
+        // Mostrar loading contextual
+        eventsList.innerHTML = `
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Finding events near you...</p>
+            </div>
+        `;
 
         // Obtener eventos cercanos (sin límite de distancia)
         const events = EventsModule.getNearbyEvents();
 
         if (events.length === 0) {
-            eventsList.innerHTML = '<p class="empty-message">No hay eventos disponibles en este momento.</p>';
+            eventsList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-calendar-times"></i>
+                    </div>
+                    <h3 class="empty-state-title">No events found</h3>
+                    <p class="empty-state-description">
+                        There are no events available in your area right now. Check back later!
+                    </p>
+                </div>
+            `;
             return;
         }
 
