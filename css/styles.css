@@ -421,6 +421,25 @@ a {
     opacity: 0.5;
 }
 
+/* Loading state for suggestions */
+.search-suggestions-loading {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--primary-color);
+    font-size: 0.9rem;
+}
+
+.search-suggestions-loading i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+}
+
+.search-suggestions-loading p {
+    margin: 0;
+    color: #666;
+}
+
 /* Scrollbar para suggestions */
 .search-suggestions::-webkit-scrollbar {
     width: 8px;

@@ -244,18 +244,27 @@ const App = (() => {
         let currentSuggestions = [];
         let currentInput = null;
         let currentDropdown = null;
+        let isLoadingPOIs = false; // Flag para evitar múltiples cargas
 
         if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
+            searchInput.addEventListener('input', async (e) => {
                 currentInput = searchInput;
                 currentDropdown = searchSuggestions;
                 const value = e.target.value;
                 
                 if (value.length >= 2) {
-                    const suggestions = getSuggestions(value);
+                    // Mostrar indicador de carga si los POIs no están cargados
+                    const allPOIs = POIDataModule.getAllPOIs();
+                    if (allPOIs.length === 0 && !isLoadingPOIs) {
+                        showLoadingSuggestions(searchSuggestions);
+                        isLoadingPOIs = true;
+                    }
+                    
+                    const suggestions = await getSuggestions(value);
                     currentSuggestions = suggestions;
                     showSuggestions(suggestions, searchSuggestions, value);
                     currentHighlightedIndex = -1;
+                    isLoadingPOIs = false;
                 } else {
                     hideSuggestions(searchSuggestions);
                     handleSearch(value);
@@ -277,16 +286,24 @@ const App = (() => {
         }
 
         if (searchInputDesktop) {
-            searchInputDesktop.addEventListener('input', (e) => {
+            searchInputDesktop.addEventListener('input', async (e) => {
                 currentInput = searchInputDesktop;
                 currentDropdown = searchSuggestionsDesktop;
                 const value = e.target.value;
                 
                 if (value.length >= 2) {
-                    const suggestions = getSuggestions(value);
+                    // Mostrar indicador de carga si los POIs no están cargados
+                    const allPOIs = POIDataModule.getAllPOIs();
+                    if (allPOIs.length === 0 && !isLoadingPOIs) {
+                        showLoadingSuggestions(searchSuggestionsDesktop);
+                        isLoadingPOIs = true;
+                    }
+                    
+                    const suggestions = await getSuggestions(value);
                     currentSuggestions = suggestions;
                     showSuggestions(suggestions, searchSuggestionsDesktop, value);
                     currentHighlightedIndex = -1;
+                    isLoadingPOIs = false;
                 } else {
                     hideSuggestions(searchSuggestionsDesktop);
                     handleSearch(value);
@@ -313,10 +330,20 @@ const App = (() => {
      * @param {string} searchTerm - Término de búsqueda
      * @returns {Array} - Array de POIs que coinciden
      */
-    function getSuggestions(searchTerm) {
+    async function getSuggestions(searchTerm) {
         if (!POIDataModule) {
             console.error('❌ POIDataModule not available');
             return [];
+        }
+        
+        // Verificar si hay POIs cargados, si no, cargar todos
+        const allPOIs = POIDataModule.getAllPOIs();
+        if (allPOIs.length === 0) {
+            console.log('⚠️ No POIs loaded yet, triggering initial load...');
+            // Cargar todos los POIs si aún no se han cargado
+            await loadInitialPOIs();
+            // Después de cargar, intentar buscar de nuevo
+            return POIDataModule.searchPOIs(searchTerm).slice(0, 8);
         }
         
         const results = POIDataModule.searchPOIs(searchTerm);
@@ -396,6 +423,22 @@ const App = (() => {
         if (dropdown) {
             dropdown.classList.remove('active');
         }
+    }
+
+    /**
+     * Muestra un indicador de carga en el dropdown
+     * @param {HTMLElement} dropdown - Elemento del dropdown
+     */
+    function showLoadingSuggestions(dropdown) {
+        if (!dropdown) return;
+
+        dropdown.innerHTML = `
+            <div class="search-suggestions-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading places...</p>
+            </div>
+        `;
+        dropdown.classList.add('active');
     }
 
     /**
