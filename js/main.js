@@ -63,16 +63,17 @@ const App = (() => {
             setTimeout(() => {
                 const splashScreen = document.getElementById('splashScreen');
                 if (splashScreen) {
-                    // Agregar animación de salida
+                    // Agregar clase de fade-out para Safari
                     splashScreen.style.opacity = '0';
                     splashScreen.style.transition = 'opacity 0.5s ease-out';
                     
-                    // Esperar a que termine la animación antes de remover
+                    // Esperar a que termine la animación de fade-out antes de remover
                     setTimeout(() => {
                         splashScreen.remove();
-                        // Después de remover el splash, solicitar ubicación del usuario inmediatamente
+                        console.log('✅ Splash screen removed, ready for location request');
+                        // Después de remover el splash, solicitar ubicación del usuario
                         requestUserLocationAfterSplash();
-                    }, 500);
+                    }, 500); // Fade-out duration
                 }
             }, 4000);
 
@@ -86,20 +87,21 @@ const App = (() => {
      * Solicita la ubicación del usuario después de que termine el splash screen
      */
     function requestUserLocationAfterSplash() {
-        // Pequeño delay para asegurar que el DOM está listo y el usuario ve la transición
+        // Dar un delay más largo para Safari - asegurarse de que el splash desapareció visualmente
         setTimeout(() => {
             if (MapaModule.getMap()) {
                 console.log('📍 Requesting user location after splash...');
                 initializeUserLocation();
             } else {
-                console.warn('⚠️ Map not ready yet, retrying in 200ms...');
+                // Si el mapa aún no está listo, esperar y reintentar
+                console.log('⏳ Map not ready, waiting...');
                 setTimeout(() => {
                     if (MapaModule.getMap()) {
                         initializeUserLocation();
                     }
-                }, 200);
+                }, 1000);
             }
-        }, 100);
+        }, 800); // Aumentado de 500ms a 800ms para Safari
     }
 
     /**
