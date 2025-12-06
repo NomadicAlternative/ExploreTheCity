@@ -111,7 +111,10 @@ const App = (() => {
 
         RoutingModule.onRoute('favorites', () => {
             UIController.showView('favorites');
-            loadAndDisplayFavorites();
+            // Usar setTimeout para asegurar que el DOM esté completamente renderizado
+            setTimeout(() => {
+                loadAndDisplayFavorites();
+            }, 50);
             updateBottomNavActive('favorites');
         });
 
@@ -563,7 +566,11 @@ const App = (() => {
         });
         
         // Si estamos en la vista de favoritos, recargar
-        if (UIController.getCurrentView() === 'favorites') {
+        const currentViewName = UIController.getCurrentView();
+        console.log('🔄 updateFavoriteUI called, current view:', currentViewName, ', favCount:', favCount);
+        
+        if (currentViewName === 'favorites') {
+            console.log('📋 Reloading favorites list...');
             loadAndDisplayFavorites();
         }
     }
@@ -929,9 +936,33 @@ Source: Google Places
     function loadAndDisplayFavorites() {
         const favoritesList = document.getElementById('favoritesList');
         
-        if (!favoritesList) return;
+        console.log('📋 loadAndDisplayFavorites called, favoritesList element:', favoritesList);
+        
+        if (!favoritesList) {
+            console.warn('⚠️ favoritesList element not found in DOM, retrying...');
+            // Reintentar después de un breve delay
+            setTimeout(() => {
+                const retryList = document.getElementById('favoritesList');
+                if (retryList) {
+                    console.log('✅ favoritesList found on retry');
+                    loadAndDisplayFavoritesInternal(retryList);
+                } else {
+                    console.error('❌ favoritesList still not found after retry');
+                }
+            }, 100);
+            return;
+        }
 
+        loadAndDisplayFavoritesInternal(favoritesList);
+    }
+
+    /**
+     * Función interna para cargar y mostrar favoritos
+     * @param {HTMLElement} favoritesList - Elemento del DOM
+     */
+    function loadAndDisplayFavoritesInternal(favoritesList) {
         const favorites = FavoritesModule.getAllFavorites();
+        console.log('❤️ Loading', favorites.length, 'favorites');
 
         if (favorites.length === 0) {
             favoritesList.innerHTML = '<p class="empty-message">You don\'t have any saved favorites yet.</p>';
@@ -970,7 +1001,7 @@ Source: Google Places
             favoritesList.appendChild(card);
         });
         
-        console.log(`📋 Displayed ${favorites.length} favorites`);
+        console.log(`✅ Displayed ${favorites.length} favorites in DOM`);
     }
 
     /**
