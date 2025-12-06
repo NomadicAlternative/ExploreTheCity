@@ -63,10 +63,14 @@ const App = (() => {
             setTimeout(() => {
                 const splashScreen = document.getElementById('splashScreen');
                 if (splashScreen) {
+                    // Agregar animación de salida
+                    splashScreen.style.opacity = '0';
+                    splashScreen.style.transition = 'opacity 0.5s ease-out';
+                    
                     // Esperar a que termine la animación antes de remover
                     setTimeout(() => {
                         splashScreen.remove();
-                        // Después de remover el splash, solicitar ubicación del usuario
+                        // Después de remover el splash, solicitar ubicación del usuario inmediatamente
                         requestUserLocationAfterSplash();
                     }, 500);
                 }
@@ -82,13 +86,20 @@ const App = (() => {
      * Solicita la ubicación del usuario después de que termine el splash screen
      */
     function requestUserLocationAfterSplash() {
-        // Dar un delay más largo para que el usuario aprecie la transición y vea el home
+        // Pequeño delay para asegurar que el DOM está listo y el usuario ve la transición
         setTimeout(() => {
             if (MapaModule.getMap()) {
                 console.log('📍 Requesting user location after splash...');
                 initializeUserLocation();
+            } else {
+                console.warn('⚠️ Map not ready yet, retrying in 200ms...');
+                setTimeout(() => {
+                    if (MapaModule.getMap()) {
+                        initializeUserLocation();
+                    }
+                }, 200);
             }
-        }, 1500); // Aumentado a 1.5 segundos después del splash
+        }, 100);
     }
 
     /**
