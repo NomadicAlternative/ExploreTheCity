@@ -245,29 +245,36 @@ const App = (() => {
         let currentInput = null;
         let currentDropdown = null;
         let isLoadingPOIs = false; // Flag para evitar múltiples cargas
+        let searchTimeout = null; // Para debounce
 
         if (searchInput) {
-            searchInput.addEventListener('input', async (e) => {
+            // Usar 'input' con debounce para mejor compatibilidad
+            searchInput.addEventListener('input', (e) => {
                 currentInput = searchInput;
                 currentDropdown = searchSuggestions;
                 const value = e.target.value;
                 
+                // Limpiar timeout anterior
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                
                 if (value.length >= 2) {
-                    // Mostrar indicador de carga si los POIs no están cargados
-                    const allPOIs = POIDataModule.getAllPOIs();
-                    if (allPOIs.length === 0 && !isLoadingPOIs) {
-                        showLoadingSuggestions(searchSuggestions);
-                        isLoadingPOIs = true;
-                    }
-                    
-                    const suggestions = await getSuggestions(value);
-                    currentSuggestions = suggestions;
-                    showSuggestions(suggestions, searchSuggestions, value);
-                    currentHighlightedIndex = -1;
-                    isLoadingPOIs = false;
+                    // Debounce de 150ms para evitar llamadas excesivas
+                    searchTimeout = setTimeout(() => {
+                        handleSearchInput(value, searchSuggestions);
+                    }, 150);
                 } else {
                     hideSuggestions(searchSuggestions);
                     handleSearch(value);
+                }
+            });
+
+            // También escuchar 'change' como fallback para Android
+            searchInput.addEventListener('change', (e) => {
+                const value = e.target.value;
+                if (value.length >= 2) {
+                    handleSearchInput(value, searchSuggestions);
                 }
             });
 
@@ -286,27 +293,30 @@ const App = (() => {
         }
 
         if (searchInputDesktop) {
-            searchInputDesktop.addEventListener('input', async (e) => {
+            searchInputDesktop.addEventListener('input', (e) => {
                 currentInput = searchInputDesktop;
                 currentDropdown = searchSuggestionsDesktop;
                 const value = e.target.value;
                 
+                // Limpiar timeout anterior
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                
                 if (value.length >= 2) {
-                    // Mostrar indicador de carga si los POIs no están cargados
-                    const allPOIs = POIDataModule.getAllPOIs();
-                    if (allPOIs.length === 0 && !isLoadingPOIs) {
-                        showLoadingSuggestions(searchSuggestionsDesktop);
-                        isLoadingPOIs = true;
-                    }
-                    
-                    const suggestions = await getSuggestions(value);
-                    currentSuggestions = suggestions;
-                    showSuggestions(suggestions, searchSuggestionsDesktop, value);
-                    currentHighlightedIndex = -1;
-                    isLoadingPOIs = false;
+                    searchTimeout = setTimeout(() => {
+                        handleSearchInput(value, searchSuggestionsDesktop);
+                    }, 150);
                 } else {
                     hideSuggestions(searchSuggestionsDesktop);
                     handleSearch(value);
+                }
+            });
+
+            searchInputDesktop.addEventListener('change', (e) => {
+                const value = e.target.value;
+                if (value.length >= 2) {
+                    handleSearchInput(value, searchSuggestionsDesktop);
                 }
             });
 
@@ -322,6 +332,43 @@ const App = (() => {
                     hideSuggestions(searchSuggestionsDesktop);
                 }
             });
+        }
+
+        /**
+         * Maneja el input de búsqueda (función auxiliar)
+         * @param {string} value - Valor del input
+         * @param {HTMLElement} dropdown - Dropdown de sugerencias
+         */
+        async function handleSearchInput(value, dropdown) {
+            // Mostrar indicador de carga si los POIs no están cargados
+            const allPOIs = POIDataModule.getAllPOIs();
+            if (allPOIs.length === 0 && !isLoadingPOIs) {
+                showLoadingSuggestions(dropdown);
+                isLoadingPOIs = true;
+                
+                try {
+                    const suggestions = await getSuggestions(value);
+                    currentSuggestions = suggestions;
+                    showSuggestions(suggestions, dropdown, value);
+                    currentHighlightedIndex = -1;
+                } catch (error) {
+                    console.error('Error getting suggestions:', error);
+                    hideSuggestions(dropdown);
+                } finally {
+                    isLoadingPOIs = false;
+                }
+            } else {
+                // POIs ya están cargados, búsqueda síncrona
+                try {
+                    const suggestions = POIDataModule.searchPOIs(value).slice(0, 8);
+                    currentSuggestions = suggestions;
+                    showSuggestions(suggestions, dropdown, value);
+                    currentHighlightedIndex = -1;
+                } catch (error) {
+                    console.error('Error searching POIs:', error);
+                    hideSuggestions(dropdown);
+                }
+            }
         }
     }
 
