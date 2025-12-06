@@ -265,9 +265,11 @@ a {
 .logo-location {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.7rem;
     flex: 1;
     order: 1;
+    width: 100%;
 }
 
 /* Search container en móvil ocupa toda la línea */
@@ -296,6 +298,8 @@ a {
     opacity: 0.95;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: right;
+    flex-shrink: 0;
 }
 
 .search-container {
