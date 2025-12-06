@@ -248,7 +248,7 @@ a {
     z-index: 1000;
     box-shadow: 0 3px 10px var(--shadow);
     border-radius: 0 0 20px 20px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .nav-top-row {
@@ -258,6 +258,7 @@ a {
     gap: 0.8rem;
     margin-bottom: 0;
     max-width: 100%;
+    overflow: visible;
 }
 
 /* Hamburger removed - using bottom navigation instead */
@@ -307,6 +308,7 @@ a {
     display: flex;
     align-items: center;
     max-width: 100%;
+    overflow: visible;
 }
 
 .search-icon {
@@ -350,7 +352,7 @@ a {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     max-height: 400px;
     overflow-y: auto;
-    z-index: 1000;
+    z-index: 1100;
     display: none;
     animation: slideDown 0.2s ease;
 }
