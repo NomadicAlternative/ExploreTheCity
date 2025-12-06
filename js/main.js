@@ -563,7 +563,11 @@ const App = (() => {
         });
         
         // Si estamos en la vista de favoritos, recargar
-        if (UIController.getCurrentView() === 'favorites') {
+        const currentViewName = UIController.getCurrentView();
+        console.log('🔄 updateFavoriteUI called, current view:', currentViewName, ', favCount:', favCount);
+        
+        if (currentViewName === 'favorites') {
+            console.log('📋 Reloading favorites list...');
             loadAndDisplayFavorites();
         }
     }
@@ -929,9 +933,15 @@ Source: Google Places
     function loadAndDisplayFavorites() {
         const favoritesList = document.getElementById('favoritesList');
         
-        if (!favoritesList) return;
+        console.log('📋 loadAndDisplayFavorites called, favoritesList element:', favoritesList);
+        
+        if (!favoritesList) {
+            console.warn('⚠️ favoritesList element not found in DOM');
+            return;
+        }
 
         const favorites = FavoritesModule.getAllFavorites();
+        console.log('❤️ Loading', favorites.length, 'favorites');
 
         if (favorites.length === 0) {
             favoritesList.innerHTML = '<p class="empty-message">You don\'t have any saved favorites yet.</p>';
@@ -970,7 +980,7 @@ Source: Google Places
             favoritesList.appendChild(card);
         });
         
-        console.log(`📋 Displayed ${favorites.length} favorites`);
+        console.log(`✅ Displayed ${favorites.length} favorites in DOM`);
     }
 
     /**
