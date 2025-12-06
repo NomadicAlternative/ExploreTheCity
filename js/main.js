@@ -111,7 +111,10 @@ const App = (() => {
 
         RoutingModule.onRoute('favorites', () => {
             UIController.showView('favorites');
-            loadAndDisplayFavorites();
+            // Usar setTimeout para asegurar que el DOM esté completamente renderizado
+            setTimeout(() => {
+                loadAndDisplayFavorites();
+            }, 50);
             updateBottomNavActive('favorites');
         });
 
@@ -936,10 +939,28 @@ Source: Google Places
         console.log('📋 loadAndDisplayFavorites called, favoritesList element:', favoritesList);
         
         if (!favoritesList) {
-            console.warn('⚠️ favoritesList element not found in DOM');
+            console.warn('⚠️ favoritesList element not found in DOM, retrying...');
+            // Reintentar después de un breve delay
+            setTimeout(() => {
+                const retryList = document.getElementById('favoritesList');
+                if (retryList) {
+                    console.log('✅ favoritesList found on retry');
+                    loadAndDisplayFavoritesInternal(retryList);
+                } else {
+                    console.error('❌ favoritesList still not found after retry');
+                }
+            }, 100);
             return;
         }
 
+        loadAndDisplayFavoritesInternal(favoritesList);
+    }
+
+    /**
+     * Función interna para cargar y mostrar favoritos
+     * @param {HTMLElement} favoritesList - Elemento del DOM
+     */
+    function loadAndDisplayFavoritesInternal(favoritesList) {
         const favorites = FavoritesModule.getAllFavorites();
         console.log('❤️ Loading', favorites.length, 'favorites');
 
