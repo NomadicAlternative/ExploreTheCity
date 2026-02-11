@@ -193,6 +193,18 @@
     <!-- Contenido Principal -->
     <main class="main-content">
 
+        <!-- Mapa Interactivo - SIEMPRE visible como fondo -->
+        <div class="map-section" id="mapSection">
+            <div id="map" class="map-container">
+                <!-- Aquí se cargará Google Maps -->
+            </div>
+            
+            <!-- Botón de Geolocalización -->
+            <button class="location-btn" id="locationBtn" aria-label="My location">
+                <i class="fas fa-location-arrow"></i>
+            </button>
+        </div>
+
         <!-- Sección de Filtros Rápidos Mobile -->
         <section class="quick-filters-mobile" id="quickFiltersMobile">
             <a href="#favorites" class="filter-chip" data-count="">
@@ -243,7 +255,7 @@
                 </button>
             </section>
 
-            <!-- Columna Principal: Mapa + Lista de POIs -->
+            <!-- Columna Principal: Solo búsqueda desktop -->
             <section class="main-column">
                 <!-- Búsqueda Desktop -->
                 <div class="search-container-desktop">
@@ -258,18 +270,6 @@
                            spellcheck="false"
                            inputmode="search">
                     <div class="search-suggestions" id="searchSuggestionsDesktop"></div>
-                </div>
-                
-                <!-- Mapa Interactivo -->
-                <div class="map-section" id="mapSection">
-                    <div id="map" class="map-container">
-                        <!-- Aquí se cargará Google Maps -->
-                    </div>
-                    
-                    <!-- Botón de Geolocalización -->
-                    <button class="location-btn" id="locationBtn" aria-label="My location">
-                        <i class="fas fa-location-arrow"></i>
-                    </button>
                 </div>
             </section>
         </div>

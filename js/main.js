@@ -1763,12 +1763,14 @@ ${event.url ? '¿Deseas comprar tickets?' : ''}
             // Si tiene favoritos, abrir Google Maps con rutas
             if (favoritesCount > 0) {
                 openGoogleMapsWithRoutes();
-            } else {
-                // Si no tiene favoritos, navegar a la vista de routes normal
-                RoutingModule.navigateTo('routes');
             }
+            
+            // SIEMPRE volver a home para ver el mapa
+            RoutingModule.navigateTo('home');
+            console.log('🏠 Navigating to home after routes modal');
         };
         
+        // Asignar evento al botón
         btn.onclick = closeModal;
         
         // Cerrar al hacer click fuera del contenido
@@ -1798,9 +1800,11 @@ ${event.url ? '¿Deseas comprar tickets?' : ''}
         modal.classList.add('active');
         console.log('✅ Empty favorites modal shown');
         
-        // Manejar cierre del modal
+        // Manejar cierre del modal - SIEMPRE navega a home
         const closeModal = () => {
             modal.classList.remove('active');
+            RoutingModule.navigateTo('home');
+            console.log('🏠 Navigating to home after empty favorites modal');
         };
         
         if (closeBtn) {
@@ -1814,7 +1818,7 @@ ${event.url ? '¿Deseas comprar tickets?' : ''}
             }
         };
         
-        // El botón "Explore Places" ya tiene href="#home" así que navegará automáticamente
+        // El botón "Explore Places" también navega a home
         if (exploreBtn) {
             exploreBtn.addEventListener('click', () => {
                 closeModal();

@@ -146,7 +146,7 @@ export const UIController = (() => {
     }
 
     /**
-     * Cierra el modal de POIs
+     * Cierra el modal de POIs y navega a home
      */
     function closePOIModal() {
         if (!elements.poiModal) return;
@@ -161,7 +161,9 @@ export const UIController = (() => {
             }
         }, 300);
 
-        console.log('📋 Modal closed');
+        // Navegar a home al cerrar el modal
+        window.location.hash = '#home';
+        console.log('📋 Modal closed - navigating to home');
     }
 
     /**
@@ -737,14 +739,12 @@ export const UIController = (() => {
 
     /**
      * Muestra la vista home
+     * El mapa siempre está visible, solo mostramos la tarjeta de POI si existe
      */
     function showHomeView() {
-        if (isMobile) {
-            if (elements.mapSection) elements.mapSection.classList.remove('hidden');
-            if (elements.poiCardMobile) elements.poiCardMobile.classList.remove('hidden');
-        } else {
-            if (elements.desktopLayout) elements.desktopLayout.style.display = 'grid';
-        }
+        // El mapa siempre está visible (está fuera del layout)
+        // Solo mostrar la tarjeta de POI si existe
+        if (elements.poiCardMobile) elements.poiCardMobile.classList.remove('hidden');
     }
 
     /**
@@ -776,16 +776,13 @@ export const UIController = (() => {
 
     /**
      * Oculta todas las secciones
-     * El mapa siempre permanece visible como fondo
+     * NOTA: El mapa (mapSection) está fuera del flujo normal y SIEMPRE visible
      */
     function hideAllSections() {
-        if (isMobile) {
-            if (elements.mapSection) elements.mapSection.classList.add('hidden');
-            if (elements.poiCardMobile) elements.poiCardMobile.classList.add('hidden');
-        }
-        // Desktop: El mapa siempre permanece visible como fondo
-        // Solo ocultamos las secciones de contenido que se superponen
+        // Ocultar tarjeta de POI móvil si existe
+        if (elements.poiCardMobile) elements.poiCardMobile.classList.add('hidden');
         
+        // Ocultar todas las secciones de contenido
         if (elements.favoritesSection) elements.favoritesSection.classList.add('hidden');
         if (elements.eventsSection) elements.eventsSection.classList.add('hidden');
         if (elements.routesSection) elements.routesSection.classList.add('hidden');
