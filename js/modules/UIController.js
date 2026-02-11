@@ -776,14 +776,15 @@ export const UIController = (() => {
 
     /**
      * Oculta todas las secciones
+     * El mapa siempre permanece visible como fondo
      */
     function hideAllSections() {
         if (isMobile) {
             if (elements.mapSection) elements.mapSection.classList.add('hidden');
             if (elements.poiCardMobile) elements.poiCardMobile.classList.add('hidden');
-        } else {
-            if (elements.desktopLayout) elements.desktopLayout.style.display = 'none';
         }
+        // Desktop: El mapa siempre permanece visible como fondo
+        // Solo ocultamos las secciones de contenido que se superponen
         
         if (elements.favoritesSection) elements.favoritesSection.classList.add('hidden');
         if (elements.eventsSection) elements.eventsSection.classList.add('hidden');
